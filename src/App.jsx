@@ -284,8 +284,8 @@ function Consultations() {
 function BookingForm({ onSubmit }) {
   return (
     <section id="booking" className="bg-white">
-      <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-[0.85fr_1.15fr] lg:px-8">
-        <div>
+      <div className="mx-auto grid max-w-7xl gap-10 px-5 py-16 lg:grid-cols-[0.9fr_1.1fr] lg:items-start lg:px-8">
+        <div className="max-w-xl">
           <p className="eyebrow">Book</p>
           <h2 className="font-serif text-4xl font-semibold leading-tight md:text-5xl">
             Request a consultation.
@@ -301,15 +301,11 @@ function BookingForm({ onSubmit }) {
           </div>
         </div>
         <form className="booking-form" onSubmit={onSubmit}>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-4 md:grid-cols-2">
             <Field label="Full name" name="name" required />
             <Field label="Age" name="age" type="number" min="1" max="120" />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Phone / WhatsApp" name="phone" required />
             <Field label="Email" name="email" type="email" />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
             <Select
               label="Consultation type"
               name="consultationType"
@@ -320,12 +316,10 @@ function BookingForm({ onSubmit }) {
               name="mode"
               options={['Online video', 'In-person clinic', 'No preference']}
             />
-          </div>
-          <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Preferred date" name="date" type="date" />
             <Field label="Preferred time" name="time" type="time" />
           </div>
-          <label className="field sm:col-span-2">
+          <label className="field">
             <span>What would you like help with?</span>
             <textarea
               name="message"
@@ -334,7 +328,11 @@ function BookingForm({ onSubmit }) {
             />
           </label>
           <label className="flex items-start gap-3 text-sm leading-6 text-ink/70">
-            <input className="mt-1 h-4 w-4 accent-moss" type="checkbox" required />
+            <input
+              className="mt-1 h-4 w-4 shrink-0 accent-moss"
+              type="checkbox"
+              required
+            />
             <span>
               I understand this is a consultation request and not an emergency
               service.

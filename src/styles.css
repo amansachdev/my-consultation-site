@@ -101,17 +101,17 @@
   }
 
   .booking-form {
-    @apply grid gap-4 p-5 sm:p-7;
+    @apply grid gap-5 rounded-lg border border-line bg-white p-5 shadow-sm sm:p-7;
   }
 
   .field {
-    @apply grid gap-2 text-sm font-semibold text-ink;
+    @apply grid w-full min-w-0 gap-2 text-sm font-semibold text-ink;
   }
 
   .field input,
   .field select,
   .field textarea {
-    @apply min-h-12 rounded-md border border-line bg-mist px-4 text-base font-normal text-ink outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10;
+    @apply w-full min-w-0 min-h-12 rounded-md border border-line bg-mist px-4 text-base font-normal text-ink outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10;
   }
 
   .field textarea {
