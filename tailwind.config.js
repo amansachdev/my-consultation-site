@@ -1,9 +1,13 @@
+import tokens from './src/design-system/tokens.js';
+
 /** @type {import('tailwindcss').Config} */
 export default {
   content: ['./index.html', './src/**/*.{js,jsx}'],
   theme: {
     extend: {
       colors: {
+        ...tokens.colors,
+        // Legacy aliases kept for the existing landing page.
         ink: '#20201d',
         moss: '#596a5a',
         sage: '#e8eee4',

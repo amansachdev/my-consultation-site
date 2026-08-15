@@ -1,0 +1,101 @@
+# Antaran Platform — Project Tracker
+
+> Single source of truth for progress. Update this file after every significant decision, design, or implementation.
+>
+> Pair this with:
+> - `ARCHITECTURE_PLAN.md` — technical design
+> - `QUESTIONS_AND_DECISIONS.md` — open questions and decision log
+> - `REGULATORY_NOTES.md` — compliance checklist
+> - `DESIGN_SYSTEM.md` — visual language and tokens
+
+## Legend
+
+| Status | Meaning |
+|--------|---------|
+| Not Started | No work done. |
+| Planned | Requirements/architecture known, waiting for ready signal. |
+| In Progress | Being actively worked on. |
+| Ready for Dev | Decisions made; can be picked up by any agent. |
+| Blocked | Waiting for an external answer, vendor, or approval. |
+| Done | Implemented, reviewed, and verified (build/tests passing). |
+| Deferred | Out of MVP scope; revisit in Phase 2. |
+
+---
+
+## Current snapshot
+
+- **Project name:** Antaran (working)
+- **Audience:** Adults 18+, Pan-India
+- **MVP clinician model:** Founder-only, architected for multi-clinician expansion
+- **Current code:** Static Vite + React + Tailwind landing page (`src/App.jsx`)
+- **Backend, auth, database, video, payments:** Not started
+- **Design system:** Tokens seeded; legacy landing page still uses original color aliases
+
+---
+
+## Module tracker
+
+| ID | Module | Phase | Status | Key Deliverables | Blockers / Open Questions |
+|----|--------|-------|--------|------------------|---------------------------|
+| M0 | Foundation & Design System | MVP | In Progress | `AGENTS.md`, design tokens, Tailwind wiring, folder structure, repo conventions, CI lint/build | Q-BIZ-01 (final brand/domain), DS-01 (color finalization) |
+| M1 | Identity, Auth & MFA | MVP | Planned | Registration, login, password reset, mobile/email verification, role-based auth, MFA for clinicians/admins, session management | Q-TECH-01 (frontend strategy), Q-TECH-02 (auth provider), Q-TECH-07 (hosting region) |
+| M2 | Patient Portal & Onboarding | MVP | Planned | Patient profile, age/location capture, consent flows, document upload, dashboard, emergency contact | Q-LEGAL-02 (consent wording), Q-LEGAL-05 (DPDP consent), Q-CLIN-05 (emergency contacts) |
+| M3 | Clinical Intake & Assessments | MVP | Planned | PHQ-9, GAD-7, suicide/self-harm screen, medical history, previous prescriptions/reports upload, score storage | Q-CLIN-03 (intake scope), Q-CLIN-04 (risk thresholds), D-CLIN-04 (no diagnosis) |
+| M4 | Booking, Calendar & Availability | MVP | Planned | Service catalogue, clinician availability slots, appointment booking/reschedule/cancel, reminders (SMS/email/push), timezone handling | Q-BIZ-02 (online vs in-person), Q-BIZ-03 (pricing), Q-CLIN-01 (service catalogue), Q-CLIN-07 (follow-up window) |
+| M5 | Payments, Invoicing & Payouts | MVP | Planned | Razorpay integration, UPI/cards/net banking, payment confirmation, invoices/receipts, refunds, cancellation handling, commission calculation, clinician payout ledger | Q-BIZ-04 (refund policy), Q-BIZ-05 (commission), Q-BIZ-06 (GST), Q-TECH-04 (gateway) |
+| M6 | Video Consultation | MVP | Planned | Token-secured video rooms, waiting room, join flow, appointment linking, fallback audio/telephone, recording opt-in | Q-TECH-03 (video provider), Q-TECH-09 (recording policy) |
+| M7 | Clinician Dashboard & EHR | MVP | Planned | Secure login, profile/credentials, calendar, appointment list, patient history, clinical notes (SOAP), diagnosis, risk assessment, questionnaire results, longitudinal history, earnings view | Q-CLIN-02 (credential checklist), Q-TECH-02 (MFA) |
+| M8 | Prescription & Documentation | MVP | Planned | Prescription generation, digital signature/approval flow, consultation summary, follow-up scheduling, document management | Q-CLIN-06 (controlled substances), Q-LEGAL-02 (consent), Q-CLIN-07 (follow-up window) |
+| M9 | Safety & Emergency Workflows | MVP | Planned | Risk screening, crisis banners, emergency referral directory, escalation log, "teleconsult not appropriate" path, referral documentation | Q-CLIN-04 (thresholds), Q-CLIN-05 (referral directory), D-CLIN-04 (no diagnosis) |
+| M10 | Admin Panel & Operations | MVP | Planned | Patient/clinician management, credential verification, appointment ops, payment/refund ops, support tickets, analytics dashboard, audit-log viewer, restricted clinical access | Q-LEGAL-04 (grievance officer), Q-BIZ-05 (payout rules) |
+| M11 | Security, Privacy & Compliance | MVP | Planned | Encryption at rest/transit, RBAC, audit logging, secure document storage, backups, data-retention/deletion, breach-response runbook, security headers, pen-test plan | Q-LEGAL-03 (retention), Q-LEGAL-05 (DPDP), Q-TECH-07 (data localization), Q-TECH-08 (backup targets) |
+| M12 | DevOps, Infra & Observability | MVP | Planned | CI/CD, India-region hosting, managed DB/Redis/S3, logging, alerting, uptime monitoring, secrets management, staging environment | Q-TECH-07 (cloud region), Q-TECH-08 (RTO/RPO) |
+| M13 | Launch, QA & Soft Rollout | MVP | Planned | QA plan, end-to-end tests, accessibility audit, security review, soft launch with founder, feedback loop, bug triage | Depends on M0-M12 |
+
+---
+
+## Phase 2 / deferred modules
+
+| ID | Module | Status | Notes |
+|----|--------|--------|-------|
+| P2-1 | Multi-clinician marketplace | Deferred | Search, profiles, ratings, onboarding pipeline |
+| P2-2 | Therapy packages & subscriptions | Deferred | Bundled sessions, recurring billing |
+| P2-3 | Mobile apps (iOS/Android) | Deferred | React Native or Flutter |
+| P2-4 | Additional validated scales | Deferred | Bipolar, ADHD, sleep, substance-use screens |
+| P2-5 | Insurance / EAP integration | Deferred | Claims, corporate dashboards |
+| P2-6 | ABHA / ABDM integration | Deferred | Health ID linking, longitudinal records |
+| P2-7 | Analytics & business intelligence | Deferred | Advanced cohort reports, BI dashboards |
+| P2-8 | Regional language support | Deferred | Hindi and other Indian languages |
+
+---
+
+## Milestones
+
+| Milestone | Target modules | Goal | Status |
+|-----------|----------------|------|--------|
+| M0: Foundation | M0 | Repo is organized, agents can onboard, design tokens wired | In Progress |
+| M1: Core identity & patient onboarding | M1-M3 | A patient can register, verify, consent, fill intake, and upload documents | Not Started |
+| M2: Booking & payments | M4-M5 | A patient can book, pay, and receive confirmation/invoice | Not Started |
+| M3: Consultation experience | M6-M8 | Clinician and patient can join video, produce notes & prescription | Not Started |
+| M4: Safety & operations | M9-M11 | Risk workflows, admin panel, compliance controls in place | Not Started |
+| M5: Launch readiness | M12-M13 | Production deployment, QA, soft launch | Not Started |
+
+---
+
+## Active blockers
+
+| ID | What is blocked | Question / dependency | Owner |
+|----|-----------------|----------------------|-------|
+| B-01 | Final frontend/auth architecture | Need decision on Next.js migration vs keeping Vite landing | Tech / Admin |
+| B-02 | Pricing & payout logic | Required to build booking, payment, and clinician earnings modules | Admin / Clinician |
+| B-03 | Consent / legal wording | Required to build onboarding and data-handling flows | Legal |
+| B-04 | Emergency referral directory | Required to build safety workflows | Clinician |
+
+---
+
+## Change log
+
+| Date | Change | Author |
+|------|--------|--------|
+| 2026-08-15 | Initial tracker created with all MVP modules | Agent |
+| 2026-08-15 | M0 marked In Progress; design tokens seeded | Agent |
