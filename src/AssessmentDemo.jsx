@@ -21,17 +21,7 @@ export function AssessmentDemo() {
   };
 
   return (
-    <div className="min-h-screen bg-neutral-mist text-neutral-ink">
-      <header className="border-b border-neutral-line bg-white">
-        <div className="mx-auto flex h-16 max-w-4xl items-center justify-between px-5">
-          <span className="font-serif text-xl font-semibold text-brand-forest">
-            Antaran
-          </span>
-          <span className="text-sm text-neutral-slate">Assessment demo</span>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-3xl px-5 py-10">
+    <section className="mx-auto max-w-3xl px-5 py-10">
         <div className="mb-8">
           <h1 className="font-serif text-3xl font-semibold text-neutral-ink md:text-4xl">
             Clinical intake assessments
@@ -75,7 +65,6 @@ export function AssessmentDemo() {
         ) : (
           <Gad7Form onComplete={handleComplete} />
         )}
-      </main>
-    </div>
+    </section>
   );
 }

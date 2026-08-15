@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Antaran | Redirecting...</title>
+    <script>
+      // GitHub Pages SPA fallback: save the attempted URL and redirect to the app base.
+      var base = location.pathname.replace(/\/[^\/]*$/, '/');
+      if (!base.endsWith('/')) base += '/';
+      sessionStorage.setItem('spa-redirect', location.href);
+      location.replace(base);
+    </script>
+  </head>
+  <body>
+    <p>Redirecting...</p>
+  </body>
+</html>

@@ -5,9 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="Book online mental health consultations with Dr Medha."
+      content="Antaran — online mental health consultations."
     />
-    <title>Dr Medha | Mental Health Consultations</title>
+    <title>Antaran | Mental Health Consultations</title>
+    <script>
+      // Restore the original URL after a GitHub Pages SPA redirect.
+      (function () {
+        var redirect = sessionStorage.getItem('spa-redirect');
+        if (redirect) {
+          sessionStorage.removeItem('spa-redirect');
+          if (redirect !== location.href) {
+            history.replaceState(null, document.title, redirect);
+          }
+        }
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>
