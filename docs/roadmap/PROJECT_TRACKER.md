@@ -40,7 +40,7 @@
 | M0 | Foundation & Design System | MVP | In Progress | `AGENTS.md`, design tokens, Tailwind wiring, folder structure, repo conventions, CI lint/build | Q-BIZ-01 (final brand/domain), DS-01 (color finalization) |
 | M1 | Identity, Auth & MFA | MVP | Planned | Registration, login, password reset, mobile/email verification, role-based auth, MFA for clinicians/admins, session management | Q-TECH-01 (frontend strategy), Q-TECH-02 (auth provider), Q-TECH-07 (hosting region) |
 | M2 | Patient Portal & Onboarding | MVP | Planned | Patient profile, age/location capture, consent flows, document upload, dashboard, emergency contact | Q-LEGAL-02 (consent wording), Q-LEGAL-05 (DPDP consent), Q-CLIN-05 (emergency contacts) |
-| M3 | Clinical Intake & Assessments | MVP | Planned | PHQ-9, GAD-7, suicide/self-harm screen, medical history, previous prescriptions/reports upload, score storage | Q-CLIN-03 (intake scope), Q-CLIN-04 (risk thresholds), D-CLIN-04 (no diagnosis) |
+| M3 | Clinical Intake & Assessments | MVP | In Progress | PHQ-9, GAD-7, suicide/self-harm screen, medical history, previous prescriptions/reports upload, score storage | Q-CLIN-03 (intake scope), Q-CLIN-04 (risk thresholds), D-CLIN-04 (no diagnosis) |
 | M4 | Booking, Calendar & Availability | MVP | Planned | Service catalogue, clinician availability slots, appointment booking/reschedule/cancel, reminders (SMS/email/push), timezone handling | Q-BIZ-02 (online vs in-person), Q-BIZ-03 (pricing), Q-CLIN-01 (service catalogue), Q-CLIN-07 (follow-up window) |
 | M5 | Payments, Invoicing & Payouts | MVP | Planned | Razorpay integration, UPI/cards/net banking, payment confirmation, invoices/receipts, refunds, cancellation handling, commission calculation, clinician payout ledger | Q-BIZ-04 (refund policy), Q-BIZ-05 (commission), Q-BIZ-06 (GST), Q-TECH-04 (gateway) |
 | M6 | Video Consultation | MVP | Planned | Token-secured video rooms, waiting room, join flow, appointment linking, fallback audio/telephone, recording opt-in | Q-TECH-03 (video provider), Q-TECH-09 (recording policy) |
@@ -99,3 +99,4 @@
 |------|--------|--------|
 | 2026-08-15 | Initial tracker created with all MVP modules | Agent |
 | 2026-08-15 | M0 marked In Progress; design tokens seeded | Agent |
+| 2026-08-15 | M3 marked In Progress; PHQ-9/GAD-7 UI/scoring engine built | Agent |
