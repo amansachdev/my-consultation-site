@@ -12,6 +12,8 @@ export default [
         alert: 'readonly',
         FormData: 'readonly',
         document: 'readonly',
+        URLSearchParams: 'readonly',
+        window: 'readonly',
       },
       parserOptions: {
         ecmaVersion: 'latest',

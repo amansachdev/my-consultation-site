@@ -4,6 +4,7 @@ import {
   CheckCircle2,
   Clock3,
   HeartHandshake,
+  Instagram,
   LockKeyhole,
   Mail,
   MapPin,
@@ -20,9 +21,10 @@ const doctor = {
   name: 'Dr Medha',
   qualification: 'Consultant Psychiatrist',
   city: 'Bengaluru / Online',
-  phone: '+91 00000 00000',
-  whatsapp: '+91 00000 00000',
-  email: 'hello@drmedha.com',
+  phone: '+91 80888 92105',
+  whatsapp: '+91 80888 92105',
+  email: 'antaran.health@gmail.com',
+  instagram: 'https://www.instagram.com/antaran.health?igsh=MTA4Zjc2am1ibzd4eQ%3D%3D&utm_source=qr',
 };
 
 const careAreas = [
@@ -59,26 +61,40 @@ const consultationTypes = [
     description: 'A first appointment to understand symptoms, history, and goals.',
   },
   {
-    title: 'Follow-up Review',
+    title: 'Follow-up',
     duration: '20-30 min',
     description: 'Ongoing support, medication review, and care-plan adjustments.',
   },
-  {
-    title: 'Sleep Consultation',
-    duration: '30-45 min',
-    description: 'Focused assessment for sleep patterns, routines, and barriers.',
-  },
 ];
+
+const GOOGLE_FORM_BASE =
+  'https://docs.google.com/forms/d/e/1FAIpQLSdbdGQpTFU8T9KH-H6M9-PvqzBAhcteDhQDIUo2FXuVZesukQ/viewform?usp=pp_url';
+
+const GOOGLE_FORM_ENTRIES = {
+  name: 'entry.1757509789',
+  age: 'entry.1385558754',
+  phone: 'entry.272098946',
+  email: 'entry.1222143642',
+  consultationType: 'entry.1226581237',
+  date: 'entry.1538227956',
+  time: 'entry.2033637864',
+  message: 'entry.1615957077',
+};
 
 function App() {
   const handleBooking = (event) => {
     event.preventDefault();
-    const formData = new FormData(event.currentTarget);
-    const name = formData.get('name');
-    alert(
-      `Thanks${name ? `, ${name}` : ''}. This demo captured your request locally. Email/payment integration can be added next.`,
-    );
-    event.currentTarget.reset();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    const params = new URLSearchParams();
+
+    Object.entries(GOOGLE_FORM_ENTRIES).forEach(([field, entryId]) => {
+      const value = formData.get(field);
+      if (value) params.set(entryId, String(value));
+    });
+
+    window.open(`${GOOGLE_FORM_BASE}&${params.toString()}`, '_blank', 'noopener,noreferrer');
+    form.reset();
   };
 
   return (
@@ -295,13 +311,22 @@ function BookingForm({ onSubmit }) {
             Request a consultation.
           </h2>
           <p className="mt-5 text-lg leading-8 text-ink/70">
-            This form is ready for a first version. Next, it can submit to
-            email, WhatsApp, a backend, or a booking/payment provider.
+            Fill in your details below. We will open a short Google Form with
+            your information pre-filled so you can review and submit it
+            securely.
           </p>
           <div className="mt-8 space-y-4 text-sm text-ink/72">
             <ContactRow icon={Phone} label="Phone" value={doctor.phone} />
             <ContactRow icon={Mail} label="Email" value={doctor.email} />
             <ContactRow icon={MapPin} label="Location" value={doctor.city} />
+          </div>
+          <div className="mt-6 rounded-lg border border-line bg-mist p-4 text-sm leading-6 text-ink/70">
+            <p className="font-semibold text-ink">Cancellation policy</p>
+            <p>
+              You can reschedule or cancel up to 24 hours before your
+              appointment. Cancellations within 24 hours may not be eligible for
+              a refund.
+            </p>
           </div>
         </div>
         <form className="booking-form" onSubmit={onSubmit}>
@@ -315,11 +340,6 @@ function BookingForm({ onSubmit }) {
               name="consultationType"
               options={consultationTypes.map((item) => item.title)}
             />
-            <Select
-              label="Preferred mode"
-              name="mode"
-              options={['Online video', 'In-person clinic', 'No preference']}
-            />
             <Field label="Preferred date" name="date" type="date" />
             <Field label="Preferred time" name="time" type="time" />
           </div>
@@ -330,17 +350,6 @@ function BookingForm({ onSubmit }) {
               rows="4"
               placeholder="Share a short note. Avoid emergency details here."
             />
-          </label>
-          <label className="flex items-start gap-3 text-sm leading-6 text-ink/70">
-            <input
-              className="mt-1 h-4 w-4 shrink-0 accent-moss"
-              type="checkbox"
-              required
-            />
-            <span>
-              I understand this is a consultation request and not an emergency
-              service.
-            </span>
           </label>
           <button className="btn-primary w-full justify-center" type="submit">
             Send booking request
@@ -389,6 +398,12 @@ function ContactSection() {
           <ContactTile icon={MessageCircle} title="WhatsApp" value={doctor.whatsapp} />
           <ContactTile icon={Mail} title="Email" value={doctor.email} />
           <ContactTile icon={MapPin} title="Clinic" value={doctor.city} />
+          <ContactTile
+            icon={Instagram}
+            title="Instagram"
+            value="@antaran.health"
+            href={doctor.instagram}
+          />
         </div>
       </div>
     </section>
@@ -405,27 +420,49 @@ function ContactRow({ icon: Icon, label, value }) {
   );
 }
 
-function ContactTile({ icon: Icon, title, value }) {
-  return (
-    <div className="contact-tile">
+function ContactTile({ icon: Icon, title, value, href }) {
+  const content = (
+    <>
       <Icon className="text-clay" size={24} />
       <div>
         <h3>{title}</h3>
         <p>{value}</p>
       </div>
-    </div>
+    </>
   );
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="contact-tile text-ink"
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return <div className="contact-tile">{content}</div>;
 }
 
 function Footer() {
   return (
     <footer className="border-t border-line bg-ink px-5 py-8 text-white lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm md:flex-row md:items-center md:justify-between">
+      <div className="mx-auto flex max-w-7xl flex-col gap-4 text-sm md:flex-row md:items-start md:justify-between">
         <p>{doctor.name} Consultation Clinic</p>
-        <p className="text-white/65">
-          This site is not for medical emergencies. Call local emergency services
-          if immediate help is required.
-        </p>
+        <div className="max-w-xl space-y-2 text-white/65">
+          <p>
+            Cancellation: You can reschedule or cancel up to 24 hours before
+            your appointment. Cancellations within 24 hours may not be eligible
+            for a refund.
+          </p>
+          <p>
+            This site is not for medical emergencies. Call local emergency
+            services if immediate help is required.
+          </p>
+        </div>
       </div>
     </footer>
   );
