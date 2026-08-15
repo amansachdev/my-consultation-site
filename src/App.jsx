@@ -13,6 +13,7 @@ import {
   Sparkles,
   Video,
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import heroImage from '../assets/consultation-hero.png';
 
 const doctor = {
@@ -114,6 +115,9 @@ function Header() {
           <a href="#consultations">Consultations</a>
           <a href="#booking">Book</a>
           <a href="#contact">Contact</a>
+          <Link to="/assessment" className="hover:text-ink">
+            Assessments
+          </Link>
         </div>
         <a className="btn-primary h-10 px-4 text-sm" href="#booking">
           <CalendarCheck size={17} />
