@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600&family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -68,7 +68,7 @@
   }
 
   .section-heading h2 {
-    @apply font-serif text-4xl font-semibold leading-tight md:text-5xl;
+    @apply py-2 font-serif text-4xl font-semibold leading-normal md:text-5xl;
   }
 
   .section-heading p:not(.eyebrow) {

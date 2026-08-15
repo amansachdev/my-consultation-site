@@ -44,7 +44,7 @@ function Hero() {
             <Sparkles size={16} />
             Online mental health consultations
           </p>
-          <h1 className="font-serif text-5xl font-semibold leading-[1.05] md:text-7xl">
+          <h1 className="py-2 font-serif text-5xl font-semibold leading-[1.1] md:text-7xl">
             Care that starts with being heard.
           </h1>
           <p className="mt-6 max-w-xl text-lg leading-8 text-ink/72">
@@ -110,8 +110,9 @@ function CarePaths() {
         <p className="eyebrow">Care Areas</p>
         <h2>Support for the concerns people actually bring in.</h2>
         <p>
-          This is placeholder service copy until Dr Medha confirms exact
-          specialties, credentials, and clinic policies.
+          From everyday stress to deeper emotional patterns, Antaran offers a
+          calm, structured space to understand what you are going through and
+          take meaningful steps forward.
         </p>
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
@@ -132,7 +133,7 @@ function Process() {
   return (
     <section className="bg-sage">
       <div className="mx-auto max-w-7xl px-5 py-16 lg:px-8">
-        <div className="section-heading mx-0">
+        <div className="section-heading">
           <p className="eyebrow">How It Works</p>
           <h2>Simple booking, thoughtful follow-through.</h2>
         </div>
@@ -191,9 +192,12 @@ function BookCta() {
     <section className="border-t border-line bg-white">
       <div className="mx-auto max-w-7xl px-5 py-16 text-center lg:px-8">
         <p className="eyebrow">Ready to begin?</p>
-        <h2 className="mx-auto max-w-2xl font-serif text-4xl font-semibold leading-tight md:text-5xl">
+        <h2 className="mx-auto max-w-2xl py-2 font-serif text-4xl font-semibold leading-normal md:text-5xl">
           Take the first step towards feeling better.
         </h2>
+        <p className="mx-auto mt-3 max-w-xl text-lg font-medium text-moss">
+          Where Healing Meets Understanding
+        </p>
         <p className="mx-auto mt-4 max-w-xl text-lg leading-8 text-ink/70">
           Book a private online consultation or complete a quick assessment to
           share how you have been feeling.

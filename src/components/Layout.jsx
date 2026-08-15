@@ -1,4 +1,11 @@
-import { CalendarCheck, Instagram, Mail, MapPin, Phone } from 'lucide-react';
+import {
+  CalendarCheck,
+  Instagram,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+} from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { brand, doctor } from '../constants';
 
@@ -57,53 +64,86 @@ function NavLink({ to, children }) {
 
 function Footer() {
   return (
-    <footer className="border-t border-line bg-ink px-5 py-10 text-white lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6 md:flex-row md:items-start md:justify-between">
-        <div className="space-y-4">
-          <p className="font-serif text-lg font-semibold">{brand.name}</p>
-          <div className="flex flex-col gap-2 text-sm text-white/80">
-            <a
-              href={`tel:${doctor.phone.replace(/\s/g, '')}`}
-              className="flex items-center gap-2 hover:text-white"
-            >
-              <Phone size={16} />
-              {doctor.phone}
-            </a>
-            <a
-              href={`mailto:${doctor.email}`}
-              className="flex items-center gap-2 hover:text-white"
-            >
-              <Mail size={16} />
-              {doctor.email}
-            </a>
-            <div className="flex items-center gap-2">
-              <MapPin size={16} />
-              {doctor.city}
-            </div>
-            <a
-              href={doctor.instagram}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 hover:text-white"
-            >
-              <Instagram size={16} />
-              @antaran.health
-            </a>
+    <footer className="border-t border-line bg-ink px-5 py-12 text-white lg:px-8">
+      <div className="mx-auto max-w-7xl space-y-10">
+        {/* Brand block */}
+        <div className="flex flex-col items-center gap-4 text-center">
+          <img
+            src={brand.logo}
+            alt={brand.name}
+            className="h-16 w-auto rounded-full object-cover"
+          />
+          <div>
+            <p className="font-serif text-2xl font-semibold">{brand.name}</p>
+            <p className="text-sm tracking-wide text-white/70">{brand.tagline}</p>
           </div>
         </div>
-        <div className="max-w-xl space-y-3 text-sm text-white/65">
-          <p>
-            <span className="font-semibold text-white/90">Cancellation:</span>{' '}
-            You can reschedule or cancel up to 24 hours before your appointment.
-            Cancellations within 24 hours may not be eligible for a refund.
-          </p>
-          <p>
-            <span className="font-semibold text-white/90">Emergency:</span> This
-            site is not for medical emergencies. Call 112 or visit your nearest
-            hospital if immediate help is required.
-          </p>
+
+        {/* Contact cards */}
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+          <ContactCard
+            icon={Phone}
+            label="Phone"
+            value={doctor.phone}
+            href={`tel:${doctor.phone.replace(/\s/g, '')}`}
+          />
+          <ContactCard
+            icon={MessageCircle}
+            label="WhatsApp"
+            value={doctor.whatsapp}
+            href={`https://wa.me/${doctor.whatsapp.replace(/[\s+]/g, '')}`}
+          />
+          <ContactCard
+            icon={Mail}
+            label="Email"
+            value={doctor.email}
+            href={`mailto:${doctor.email}`}
+          />
+          <ContactCard icon={MapPin} label="Location" value={doctor.city} />
+          <ContactCard
+            icon={Instagram}
+            label="Instagram"
+            value="@antaran.health"
+            href={doctor.instagram}
+          />
         </div>
+
+        <p className="text-center text-xs text-white/40">
+          © {new Date().getFullYear()} {brand.name}. All rights reserved.
+        </p>
       </div>
     </footer>
   );
+}
+
+function ContactCard({ icon: Icon, label, value, href }) {
+  const content = (
+    <>
+      <Icon className="text-brand-gold" size={20} />
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-white/60">
+          {label}
+        </p>
+        <p className="mt-0.5 text-sm font-medium text-white">{value}</p>
+      </div>
+    </>
+  );
+
+  const className =
+    'flex items-center gap-3 rounded-lg border border-white/10 bg-white/5 p-4 transition hover:bg-white/10';
+
+  if (href) {
+    return (
+      <a
+        href={href}
+        target={href.startsWith('http') ? '_blank' : undefined}
+        rel={href.startsWith('http') ? 'noopener noreferrer' : undefined}
+        className={className}
+      >
+        {content}
+      </a>
+    );
+  }
+
+  return <div className={className}>{content}</div>;
 }
