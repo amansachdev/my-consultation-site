@@ -102,3 +102,4 @@
 | 2026-08-15 | M3 marked In Progress; PHQ-9/GAD-7 UI/scoring engine built | Agent |
 | 2026-08-17 | Deployed landing page to Azure Static Web Apps Free tier; custom domain `antaran.online` configured with HTTPS; GitHub Actions CI/CD workflow added | Agent |
 | 2026-08-17 | M12 marked In Progress; initial CI/CD pipeline established | Agent |
+| 2026-08-18 | Added Antaran favicon, social preview image, canonical metadata, Open Graph/Twitter tags, and MedicalClinic JSON-LD to the landing page | Agent |
