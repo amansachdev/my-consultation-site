@@ -90,14 +90,6 @@ export function BookingForm() {
             <ContactRow icon={Mail} label="Email" value={doctor.email} />
             <ContactRow icon={MapPin} label="Location" value={doctor.city} />
           </div>
-          <div className="mt-6 rounded-lg border border-line bg-mist p-4 text-sm leading-6 text-ink/70">
-            <p className="font-semibold text-ink">Cancellation policy</p>
-            <p>
-              You can reschedule or cancel up to 24 hours before your
-              appointment. Cancellations within 24 hours may not be eligible for
-              a refund.
-            </p>
-          </div>
         </div>
         <form className="booking-form" onSubmit={handleSubmit} noValidate>
           <div className="grid gap-4 md:grid-cols-2">

@@ -41,37 +41,13 @@ const faqs = [
     ),
   },
   {
-    question: 'Can I cancel or change the date/time of my appointments?',
+    question: 'Can I reschedule or cancel my appointment?',
     answer: (
-      <>
-        <p>
-          Our team makes every effort to accommodate requests to cancel or change
-          the date/time of an appointment. However, a cancellation or change fee
-          applies if notified less than 24 hours before the scheduled time, as we
-          need that much time to find a replacement. Here is our detailed
-          cancellation / change policy:
-        </p>
-        <div className="overflow-x-auto">
-          <table className="faq-table mt-4 w-full min-w-[20rem] text-left text-sm">
-            <thead>
-              <tr>
-                <th>Time frame (from scheduled appointment time)</th>
-                <th>Fee for change / cancellation</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                <td>24 hours to 365 days</td>
-                <td>₹ 0.00</td>
-              </tr>
-              <tr>
-                <td>0 hours to 24 hours</td>
-                <td>Un-changeable</td>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-      </>
+      <p>
+        Yes. You can reschedule your appointment up to 30 minutes before the
+        scheduled time. If you need to cancel, that is completely fine too — just
+        let us know as soon as possible.
+      </p>
     ),
   },
   {

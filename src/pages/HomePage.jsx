@@ -168,8 +168,8 @@ function Consultations() {
         <p className="eyebrow">Consultations</p>
         <h2>Choose the right appointment type.</h2>
         <p>
-          Fees, payment collection, cancellation policy, and exact session
-          lengths can be connected once the clinic workflow is finalized.
+          Flexible, confidential online psychiatric care designed around your
+          schedule and comfort.
         </p>
       </div>
       <div className="grid gap-5 lg:grid-cols-2">
