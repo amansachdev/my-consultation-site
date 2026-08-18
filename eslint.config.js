@@ -12,6 +12,7 @@ export default [
         alert: 'readonly',
         FormData: 'readonly',
         document: 'readonly',
+        process: 'readonly',
         URLSearchParams: 'readonly',
         window: 'readonly',
       },

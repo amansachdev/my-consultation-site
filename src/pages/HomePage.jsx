@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import heroImage from '../../assets/consultation-hero.png';
+import { FaqSection } from '../components/FaqSection';
 import { brand, careAreas, consultationTypes, doctor, steps } from '../constants';
 
 export function HomePage() {
@@ -22,6 +23,7 @@ export function HomePage() {
       <CarePaths />
       <Process />
       <Consultations />
+      <FaqSection />
       <BookCta />
     </>
   );
@@ -176,7 +178,7 @@ function Consultations() {
             <p className="text-sm font-semibold text-clay">{item.duration}</p>
             <h3>{item.title}</h3>
             <p>{item.description}</p>
-            <Link to="/book">
+            <Link to="/book" state={{ consultationType: item.title }}>
               Request slot
               <ArrowRight size={16} />
             </Link>

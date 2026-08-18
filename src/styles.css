@@ -152,4 +152,21 @@
   .contact-tile {
     @apply flex items-start gap-4 p-5;
   }
+
+  .faq-table {
+    @apply border-collapse rounded-md border border-line text-sm;
+  }
+
+  .faq-table th,
+  .faq-table td {
+    @apply border border-line px-4 py-2.5;
+  }
+
+  .faq-table th {
+    @apply bg-mist font-semibold text-ink;
+  }
+
+  .faq-table td {
+    @apply text-ink/80;
+  }
 }

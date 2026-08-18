@@ -20,7 +20,7 @@
 
 | ID | Area | Question | Context / Options | Owner | Status |
 |----|------|----------|-------------------|-------|--------|
-| Q-BIZ-01 | Business | Final brand name, domain, and logo usage rights | Logo reads "Antaran". Is this the final name? Which domains/social handles are available? | Admin | Open |
+| Q-BIZ-01 | Business | Final brand name, domain, and logo usage rights | Domain purchased: `antaran.online` and deployed via Azure Static Web Apps. Final brand name and logo/trademark usage rights still to be confirmed. | Admin | Open |
 | Q-BIZ-02 | Business | Will the MVP include in-person clinic bookings or online-only telepsychiatry? | Current landing page mentions both. In-person adds location/clinic-management complexity. | Admin / Clinician | Open |
 | Q-BIZ-03 | Business | What are the consultation fees for each service type? | Initial / follow-up / sleep / therapy / packages. Determines payment order model and payout logic. | Admin / Clinician | Open |
 | Q-BIZ-04 | Business | Cancellation and refund policy | e.g., full refund >24h, 50% 12-24h, no refund <12h. Required for payment and booking modules. | Admin / Legal | Open |
@@ -81,6 +81,7 @@
 | D-DESIGN-01 | Color palette derived from the Antaran logo: forest green, sage, warm gold, coral | See `DESIGN_SYSTEM.md` and `src/design-system/tokens.*`. | 2026-08-15 | Tech / Designer |
 | D-CLIN-03 | MVP validated scales: **PHQ-9** and **GAD-7**; others in Phase 2 | Most common, evidence-based, low-risk screening tools. | 2026-08-15 | Clinician |
 | D-CLIN-04 | The platform **will not diagnose**; assessments are decision-support for clinicians | Essential clinical-safety guardrail. | 2026-08-15 | Clinician / Legal |
+| D-TECH-10 | Host the static landing page on **Azure Static Web Apps Free tier** with custom domain `antaran.online` and GitHub Actions CI/CD | Cheapest viable option (~$0 for current traffic); free SSL, global CDN, and simple Vite/React deployment. | 2026-08-17 | Tech |
 
 ---
 

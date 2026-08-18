@@ -37,7 +37,7 @@
 
 | ID | Module | Phase | Status | Key Deliverables | Blockers / Open Questions |
 |----|--------|-------|--------|------------------|---------------------------|
-| M0 | Foundation & Design System | MVP | In Progress | `AGENTS.md`, design tokens, Tailwind wiring, folder structure, repo conventions, CI lint/build | Q-BIZ-01 (final brand/domain), DS-01 (color finalization) |
+| M0 | Foundation & Design System | MVP | In Progress | `AGENTS.md`, design tokens, Tailwind wiring, folder structure, repo conventions, CI lint/build | Q-BIZ-01 (final brand/domain) resolved: domain is `antaran.online`; DS-01 (color finalization) |
 | M1 | Identity, Auth & MFA | MVP | Planned | Registration, login, password reset, mobile/email verification, role-based auth, MFA for clinicians/admins, session management | Q-TECH-01 (frontend strategy), Q-TECH-02 (auth provider), Q-TECH-07 (hosting region) |
 | M2 | Patient Portal & Onboarding | MVP | Planned | Patient profile, age/location capture, consent flows, document upload, dashboard, emergency contact | Q-LEGAL-02 (consent wording), Q-LEGAL-05 (DPDP consent), Q-CLIN-05 (emergency contacts) |
 | M3 | Clinical Intake & Assessments | MVP | In Progress | PHQ-9, GAD-7, suicide/self-harm screen, medical history, previous prescriptions/reports upload, score storage | Q-CLIN-03 (intake scope), Q-CLIN-04 (risk thresholds), D-CLIN-04 (no diagnosis) |
@@ -49,7 +49,7 @@
 | M9 | Safety & Emergency Workflows | MVP | Planned | Risk screening, crisis banners, emergency referral directory, escalation log, "teleconsult not appropriate" path, referral documentation | Q-CLIN-04 (thresholds), Q-CLIN-05 (referral directory), D-CLIN-04 (no diagnosis) |
 | M10 | Admin Panel & Operations | MVP | Planned | Patient/clinician management, credential verification, appointment ops, payment/refund ops, support tickets, analytics dashboard, audit-log viewer, restricted clinical access | Q-LEGAL-04 (grievance officer), Q-BIZ-05 (payout rules) |
 | M11 | Security, Privacy & Compliance | MVP | Planned | Encryption at rest/transit, RBAC, audit logging, secure document storage, backups, data-retention/deletion, breach-response runbook, security headers, pen-test plan | Q-LEGAL-03 (retention), Q-LEGAL-05 (DPDP), Q-TECH-07 (data localization), Q-TECH-08 (backup targets) |
-| M12 | DevOps, Infra & Observability | MVP | Planned | CI/CD, India-region hosting, managed DB/Redis/S3, logging, alerting, uptime monitoring, secrets management, staging environment | Q-TECH-07 (cloud region), Q-TECH-08 (RTO/RPO) |
+| M12 | DevOps, Infra & Observability | MVP | In Progress | CI/CD (GitHub Actions → Azure Static Web Apps), managed DB/Redis/S3, logging, alerting, uptime monitoring, secrets management, staging environment | Q-TECH-07 (cloud region: Static Web Apps hosted in East Asia; custom domain + CDN), Q-TECH-08 (RTO/RPO) |
 | M13 | Launch, QA & Soft Rollout | MVP | Planned | QA plan, end-to-end tests, accessibility audit, security review, soft launch with founder, feedback loop, bug triage | Depends on M0-M12 |
 
 ---
@@ -100,3 +100,5 @@
 | 2026-08-15 | Initial tracker created with all MVP modules | Agent |
 | 2026-08-15 | M0 marked In Progress; design tokens seeded | Agent |
 | 2026-08-15 | M3 marked In Progress; PHQ-9/GAD-7 UI/scoring engine built | Agent |
+| 2026-08-17 | Deployed landing page to Azure Static Web Apps Free tier; custom domain `antaran.online` configured with HTTPS; GitHub Actions CI/CD workflow added | Agent |
+| 2026-08-17 | M12 marked In Progress; initial CI/CD pipeline established | Agent |
