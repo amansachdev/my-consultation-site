@@ -14,7 +14,7 @@ export function Gad7Form({ onComplete }) {
   };
 
   const handleSubmit = () => {
-    onComplete(scoreGad7(responses));
+    onComplete({ ...scoreGad7(responses), responses });
   };
 
   return (

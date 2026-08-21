@@ -27,8 +27,10 @@
 - **Project name:** Antaran (working)
 - **Audience:** Adults 18+, Pan-India
 - **MVP clinician model:** Founder-only, architected for multi-clinician expansion
-- **Current code:** Static Vite + React + Tailwind landing page (`src/App.jsx`)
-- **Backend, auth, database, video, payments:** Not started
+- **Current code:** Public Vite + React + Tailwind site with optional account portal and Azure Functions API
+- **Backend:** Azure Functions API scaffolded; Cosmos DB persistence requires Azure configuration
+- **Auth:** Optional Google sign-in through Azure Static Web Apps authentication
+- **Database, video, payments:** Database integration scaffolded; video and payments not started
 - **Design system:** Tokens seeded; legacy landing page still uses original color aliases
 
 ---
@@ -38,9 +40,9 @@
 | ID | Module | Phase | Status | Key Deliverables | Blockers / Open Questions |
 |----|--------|-------|--------|------------------|---------------------------|
 | M0 | Foundation & Design System | MVP | In Progress | `AGENTS.md`, design tokens, Tailwind wiring, folder structure, repo conventions, CI lint/build | Q-BIZ-01 (final brand/domain) resolved: domain is `antaran.online`; DS-01 (color finalization) |
-| M1 | Identity, Auth & MFA | MVP | Planned | Registration, login, password reset, mobile/email verification, role-based auth, MFA for clinicians/admins, session management | Q-TECH-01 (frontend strategy), Q-TECH-02 (auth provider), Q-TECH-07 (hosting region) |
-| M2 | Patient Portal & Onboarding | MVP | Planned | Patient profile, age/location capture, consent flows, document upload, dashboard, emergency contact | Q-LEGAL-02 (consent wording), Q-LEGAL-05 (DPDP consent), Q-CLIN-05 (emergency contacts) |
-| M3 | Clinical Intake & Assessments | MVP | In Progress | PHQ-9, GAD-7, suicide/self-harm screen, medical history, previous prescriptions/reports upload, score storage | Q-CLIN-03 (intake scope), Q-CLIN-04 (risk thresholds), D-CLIN-04 (no diagnosis) |
+| M1 | Identity, Auth & MFA | MVP | In Progress | Optional Google sign-in through Azure SWA auth, account route, session-aware UI; clinician/admin MFA remains future work | Q-TECH-07 (hosting region) |
+| M2 | Patient Portal & Onboarding | MVP | In Progress | Optional profile, booking history, consent capture, dashboard; document upload and emergency contact deferred | Q-LEGAL-02 (consent wording), Q-LEGAL-05 (DPDP consent) |
+| M3 | Clinical Intake & Assessments | MVP | In Progress | PHQ-9/GAD-7 scoring, crisis banner, optional consented score/response storage | Q-CLIN-03 (intake scope), Q-CLIN-04 (risk thresholds), D-CLIN-04 (no diagnosis) |
 | M4 | Booking, Calendar & Availability | MVP | Planned | Service catalogue, clinician availability slots, appointment booking/reschedule/cancel, reminders (SMS/email/push), timezone handling | Q-BIZ-02 (online vs in-person), Q-BIZ-03 (pricing), Q-CLIN-01 (service catalogue), Q-CLIN-07 (follow-up window) |
 | M5 | Payments, Invoicing & Payouts | MVP | Planned | Razorpay integration, UPI/cards/net banking, payment confirmation, invoices/receipts, refunds, cancellation handling, commission calculation, clinician payout ledger | Q-BIZ-04 (refund policy), Q-BIZ-05 (commission), Q-BIZ-06 (GST), Q-TECH-04 (gateway) |
 | M6 | Video Consultation | MVP | Planned | Token-secured video rooms, waiting room, join flow, appointment linking, fallback audio/telephone, recording opt-in | Q-TECH-03 (video provider), Q-TECH-09 (recording policy) |
@@ -86,7 +88,7 @@
 
 | ID | What is blocked | Question / dependency | Owner |
 |----|-----------------|----------------------|-------|
-| B-01 | Final frontend/auth architecture | Need decision on Next.js migration vs keeping Vite landing | Tech / Admin |
+| B-01 | Azure account persistence | Configure Cosmos DB, Functions settings, Google provider, and production secrets | Tech / Admin |
 | B-02 | Pricing & payout logic | Required to build booking, payment, and clinician earnings modules | Admin / Clinician |
 | B-03 | Consent / legal wording | Required to build onboarding and data-handling flows | Legal |
 | B-04 | Emergency referral directory | Required to build safety workflows | Clinician |
@@ -103,3 +105,4 @@
 | 2026-08-17 | Deployed landing page to Azure Static Web Apps Free tier; custom domain `antaran.online` configured with HTTPS; GitHub Actions CI/CD workflow added | Agent |
 | 2026-08-17 | M12 marked In Progress; initial CI/CD pipeline established | Agent |
 | 2026-08-18 | Added Antaran favicon, social preview image, canonical metadata, Open Graph/Twitter tags, and MedicalClinic JSON-LD to the landing page | Agent |
+| 2026-08-21 | Added optional Google sign-in, account portal, consented assessment storage, signed-in booking history, Azure Functions API, and Cosmos DB integration scaffold | Agent |

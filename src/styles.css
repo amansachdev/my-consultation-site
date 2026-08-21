@@ -135,6 +135,18 @@
     @apply grid gap-5 rounded-lg border border-line bg-white p-5 shadow-sm sm:p-7;
   }
 
+  .account-panel {
+    @apply rounded-lg border border-line bg-white p-5 shadow-sm sm:p-7;
+  }
+
+  .account-list-item {
+    @apply flex items-center justify-between gap-4 rounded-md border border-line bg-mist p-4;
+  }
+
+  .status-pill {
+    @apply rounded-full bg-brand-sage px-3 py-1 text-xs font-semibold capitalize text-brand-forest;
+  }
+
   .field {
     @apply grid w-full min-w-0 gap-2 text-sm font-semibold text-ink;
   }

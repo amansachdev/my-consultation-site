@@ -40,8 +40,8 @@
 | Q-LEGAL-03 | Legal | Data-retention schedule for medical records and audit logs | Minimum retention often tied to clinical / legal requirements; affects deletion policy. | Legal | Open |
 | Q-LEGAL-04 | Legal | Grievance / nodal officer and response timelines | Required under IT Rules and good clinical governance. | Legal / Admin | Open |
 | Q-LEGAL-05 | Legal | DPDP Act 2023 readiness and consent-manager approach | How explicit consent is captured, withdrawn, and logged. | Legal | Open |
-| Q-TECH-01 | Tech | Frontend strategy: migrate to Next.js or keep Vite React landing + separate Next.js apps? | Next.js gives SSR, routing, API routes; Vite landing is already built. | Tech / Admin | Proposed |
-| Q-TECH-02 | Tech | Auth provider: self-hosted vs Clerk / Auth0 / Firebase Auth | Self-hosted gives control; managed reduces build time. Clinicians/admins need MFA. | Tech | Proposed |
+| Q-TECH-01 | Tech | Frontend strategy: migrate to Next.js or keep Vite React landing + separate Next.js apps? | Next.js gives SSR, routing, API routes; Vite landing is already built. | Tech / Admin | Decided |
+| Q-TECH-02 | Tech | Auth provider: self-hosted vs Clerk / Auth0 / Firebase Auth | Self-hosted gives control; managed reduces build time. Clinicians/admins need MFA. | Tech | Decided |
 | Q-TECH-03 | Tech | Video provider: 100ms vs Daily.co vs Twilio vs self-hosted Jitsi | Need India presence, waiting rooms, recording opt-in, reasonable cost. | Tech | Proposed |
 | Q-TECH-04 | Tech | Payment gateway: Razorpay vs Cashfree vs Stripe India | Razorpay is the default for Indian UPI/cards/netbanking. | Tech | Proposed |
 | Q-TECH-05 | Tech | SMS provider: MSG91 vs Twilio | MSG91 is usually cheaper for India OTP; Twilio broader. | Tech | Proposed |
@@ -82,6 +82,9 @@
 | D-CLIN-03 | MVP validated scales: **PHQ-9** and **GAD-7**; others in Phase 2 | Most common, evidence-based, low-risk screening tools. | 2026-08-15 | Clinician |
 | D-CLIN-04 | The platform **will not diagnose**; assessments are decision-support for clinicians | Essential clinical-safety guardrail. | 2026-08-15 | Clinician / Legal |
 | D-TECH-10 | Host the static landing page on **Azure Static Web Apps Free tier** with custom domain `antaran.online` and GitHub Actions CI/CD | Cheapest viable option (~$0 for current traffic); free SSL, global CDN, and simple Vite/React deployment. | 2026-08-17 | Tech |
+| D-TECH-11 | Keep the public frontend as **Vite + React** and add an **Azure Functions API** under the existing Azure Static Web App | Preserves the public deployment and avoids a Next.js migration while optional patient features are validated. | 2026-08-21 | Tech |
+| D-TECH-12 | Use **Azure Static Web Apps built-in Google authentication** for optional patient accounts | Avoids password storage and keeps the public site ungated; first-party Google sign-in creates the account on first login. | 2026-08-21 | Tech |
+| D-TECH-13 | Use **Cosmos DB serverless** for the initial account, booking, consent, and assessment persistence | Minimizes initial operational cost and integrates cleanly with Azure Functions; production data region still requires confirmation. | 2026-08-21 | Tech |
 
 ---
 

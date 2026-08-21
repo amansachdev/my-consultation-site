@@ -58,6 +58,7 @@ export function AssessmentDemo() {
             score={result.total}
             severity={result.severity}
             isHighRisk={result.isHighRisk}
+            responses={result.responses}
             onReset={handleReset}
           />
         ) : activeScale === 'phq9' ? (

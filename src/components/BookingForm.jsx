@@ -7,13 +7,20 @@ import {
   GOOGLE_FORM_BASE,
   GOOGLE_FORM_ENTRIES,
 } from '../constants';
+import { useAuth } from '../context/useAuth';
+import { apiRequest } from '../lib/api';
 
 export function BookingForm() {
   const location = useLocation();
+  const { isAuthenticated } = useAuth();
   const preselectedType = location.state?.consultationType || '';
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
+  const [submitError, setSubmitError] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [consentGiven, setConsentGiven] = useState(false);
 
   const todayString = useMemo(() => {
     const now = new Date();
@@ -45,6 +52,11 @@ export function BookingForm() {
       return;
     }
 
+    if (isAuthenticated) {
+      submitBooking(data, form);
+      return;
+    }
+
     const params = new URLSearchParams();
     Object.entries(GOOGLE_FORM_ENTRIES).forEach(([field, entryId]) => {
       const value = formData.get(field);
@@ -55,6 +67,36 @@ export function BookingForm() {
     form.reset();
     setErrors({});
     setTouched({});
+  };
+
+  const submitBooking = async (data, form) => {
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      await apiRequest('/bookings', {
+        method: 'POST',
+        body: JSON.stringify({
+          fullName: data.name,
+          age: data.age ? Number(data.age) : '',
+          phone: data.phone,
+          email: data.email,
+          consultationType: data.consultationType,
+          preferredDate: data.date,
+          preferredTime: data.time,
+          message: data.message || '',
+          consentGiven,
+          consentVersion: 'account-storage-v1',
+        }),
+      });
+      form.reset();
+      setErrors({});
+      setTouched({});
+      setSubmitted(true);
+    } catch (error) {
+      setSubmitError(error.message);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleBlur = (event) => {
@@ -81,9 +123,9 @@ export function BookingForm() {
             Request a consultation.
           </h2>
           <p className="mt-5 text-lg leading-8 text-ink/70">
-            Fill in your details below. We will open a short Google Form with
-            your information pre-filled so you can review and submit it
-            securely.
+            Fill in your details below. {isAuthenticated
+              ? 'Your request will be saved to your account so you can track it.'
+              : 'We will open a short Google Form with your information pre-filled so you can review and submit it.'}
           </p>
           <div className="mt-8 space-y-4 text-sm text-ink/72">
             <ContactRow icon={Phone} label="Phone" value={doctor.phone} />
@@ -91,7 +133,14 @@ export function BookingForm() {
             <ContactRow icon={MapPin} label="Location" value={doctor.city} />
           </div>
         </div>
-        <form className="booking-form" onSubmit={handleSubmit} noValidate>
+        {submitted ? (
+          <div className="booking-form">
+            <p className="eyebrow">Request received</p>
+            <h2 className="font-serif text-3xl font-semibold">We have your request.</h2>
+            <p className="leading-7 text-ink/70">The clinic team will review your preferred time and contact you to confirm availability.</p>
+            <button type="button" className="btn-secondary justify-self-start" onClick={() => setSubmitted(false)}>Send another request</button>
+          </div>
+        ) : <form className="booking-form" onSubmit={handleSubmit} noValidate>
           <div className="grid gap-4 md:grid-cols-2">
             <Field
               label="Full name"
@@ -174,11 +223,18 @@ export function BookingForm() {
               placeholder="Share a short note. Avoid emergency details here."
             />
           </label>
-          <button className="btn-primary w-full justify-center" type="submit">
-            Send booking request
+          {isAuthenticated && (
+            <label className="flex gap-3 text-sm leading-6 text-ink/80">
+              <input type="checkbox" checked={consentGiven} onChange={(event) => setConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-forest" />
+              <span>I consent to Antaran storing this booking request in my account so I can view its status later.</span>
+            </label>
+          )}
+          {submitError && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{submitError}</p>}
+          <button className="btn-primary w-full justify-center" type="submit" disabled={submitting}>
+            {submitting ? 'Sending...' : 'Send booking request'}
             <ArrowRight size={18} />
           </button>
-        </form>
+        </form>}
       </div>
     </section>
   );

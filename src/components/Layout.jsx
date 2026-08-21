@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { brand, doctor } from '../constants';
+import { useAuth } from '../context/useAuth';
 
 export function Layout({ children }) {
   return (
@@ -20,6 +21,8 @@ export function Layout({ children }) {
 }
 
 function Header() {
+  const { isAuthenticated, status, signInUrl } = useAuth();
+
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-mist/90 backdrop-blur">
       <nav className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5 lg:px-8">
@@ -38,10 +41,17 @@ function Header() {
           <NavLink to="/assessment">Assessments</NavLink>
           <NavLink to="/team">Know your team</NavLink>
         </div>
-        <Link to="/book" className="btn-primary h-10 px-4 text-sm">
-          <CalendarCheck size={17} />
-          Book
-        </Link>
+        <div className="flex items-center gap-2">
+          {status === 'ready' && (isAuthenticated ? (
+            <Link to="/account" className="btn-secondary hidden h-10 px-4 text-sm sm:inline-flex">Account</Link>
+          ) : (
+            <a href={signInUrl} className="btn-secondary hidden h-10 px-4 text-sm sm:inline-flex">Sign in</a>
+          ))}
+          <Link to="/book" className="btn-primary h-10 px-4 text-sm">
+            <CalendarCheck size={17} />
+            Book
+          </Link>
+        </div>
       </nav>
     </header>
   );

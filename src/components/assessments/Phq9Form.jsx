@@ -14,7 +14,7 @@ export function Phq9Form({ onComplete }) {
   };
 
   const handleSubmit = () => {
-    onComplete(scorePhq9(responses));
+    onComplete({ ...scorePhq9(responses), responses });
   };
 
   return (

@@ -1,6 +1,36 @@
 import { CrisisBanner } from './CrisisBanner';
+import { useState } from 'react';
+import { LogIn, Save } from 'lucide-react';
+import { useAuth } from '../../context/useAuth';
+import { apiRequest } from '../../lib/api';
 
-export function AssessmentResult({ title, score, severity, isHighRisk, onReset }) {
+export function AssessmentResult({ title, score, severity, isHighRisk, responses, onReset }) {
+  const { isAuthenticated, signInUrl } = useAuth();
+  const [consent, setConsent] = useState(false);
+  const [saveState, setSaveState] = useState('idle');
+  const [saveError, setSaveError] = useState('');
+
+  const saveAssessment = async () => {
+    if (!consent) return;
+    setSaveState('saving');
+    setSaveError('');
+    try {
+      await apiRequest('/assessments', {
+        method: 'POST',
+        body: JSON.stringify({
+          assessmentType: title,
+          responses,
+          consentGiven: true,
+          consentVersion: 'assessment-storage-v1',
+        }),
+      });
+      setSaveState('saved');
+    } catch (error) {
+      setSaveState('idle');
+      setSaveError(error.message);
+    }
+  };
+
   return (
     <div className="grid gap-5 rounded-lg border border-neutral-line bg-white p-5 shadow-sm sm:p-7">
       <div>
@@ -23,6 +53,22 @@ export function AssessmentResult({ title, score, severity, isHighRisk, onReset }
           symptoms and recommend next steps.
         </p>
       </div>
+
+      {isAuthenticated ? (
+        <div className="rounded-md border border-neutral-line bg-neutral-mist p-4">
+          <label className="flex gap-3 text-sm leading-6 text-neutral-ink">
+            <input type="checkbox" checked={consent} onChange={(event) => setConsent(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-forest" />
+            <span>I consent to saving my {title} responses and score to my Antaran account so I can review them later.</span>
+          </label>
+          <button type="button" onClick={saveAssessment} disabled={!consent || saveState === 'saving' || saveState === 'saved'} className="btn-primary mt-4">
+            <Save size={17} />
+            {saveState === 'saved' ? 'Saved to account' : saveState === 'saving' ? 'Saving...' : 'Save assessment'}
+          </button>
+          {saveError && <p className="mt-3 text-sm font-medium text-semantic-danger" role="alert">{saveError}</p>}
+        </div>
+      ) : (
+        <a href={signInUrl} className="btn-secondary justify-center"><LogIn size={17} /> Sign in to save this assessment</a>
+      )}
 
       <button
         type="button"

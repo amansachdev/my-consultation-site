@@ -47,4 +47,4 @@ jobs:
           action: upload
           app_location: /
           output_location: dist
-          api_location: ""
+          api_location: api
