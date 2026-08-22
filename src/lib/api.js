@@ -7,7 +7,10 @@ export async function apiRequest(path, options = {}) {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...(token ? {
+        Authorization: `Bearer ${token}`,
+        'X-Firebase-Token': token,
+      } : {}),
       ...(options.headers || {}),
     },
     ...options,

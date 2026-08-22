@@ -31,7 +31,9 @@ function getFirebaseAuth() {
 }
 
 async function getPrincipal(request) {
-  const header = request.headers.get('authorization') || '';
+  const header = request.headers.get('x-firebase-token')
+    ? `Bearer ${request.headers.get('x-firebase-token')}`
+    : request.headers.get('authorization') || '';
   if (!header.startsWith('Bearer ')) return null;
   try {
     const decoded = await getFirebaseAuth().verifyIdToken(header.slice(7));
