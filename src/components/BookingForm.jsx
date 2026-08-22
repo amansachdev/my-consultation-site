@@ -149,6 +149,7 @@ export function BookingForm() {
               type="number"
               min="1"
               max="120"
+              required
               error={errors.age}
               touched={touched.age}
               onBlur={handleBlur}
@@ -169,6 +170,7 @@ export function BookingForm() {
               name="email"
               type="email"
               placeholder="you@example.com"
+              required
               error={errors.email}
               touched={touched.email}
               onBlur={handleBlur}
