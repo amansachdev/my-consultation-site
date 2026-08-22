@@ -1,7 +1,6 @@
 import {
   CalendarCheck,
   Instagram,
-  LogIn,
   Mail,
   MapPin,
   MessageCircle,
@@ -44,14 +43,9 @@ function Header() {
         </div>
         <div className="flex items-center gap-2">
           {status === 'ready' && (isAuthenticated ? (
-            <Link to="/account" className="btn-secondary hidden h-10 px-4 text-sm sm:inline-flex">Account</Link>
+            <Link to="/account" className="btn-secondary h-10 px-3 text-sm sm:px-4">Account</Link>
           ) : (
-            <>
-              <button type="button" onClick={signIn} className="btn-secondary hidden h-10 px-4 text-sm sm:inline-flex">Sign in with Google</button>
-              <button type="button" onClick={signIn} className="btn-secondary inline-flex h-10 w-10 justify-center p-0 sm:hidden" aria-label="Sign in with Google" title="Sign in with Google">
-                <LogIn size={17} />
-              </button>
-            </>
+            <button type="button" onClick={signIn} className="btn-secondary h-10 px-3 text-sm sm:px-4">Sign in</button>
           ))}
           <Link to="/book" className="btn-primary h-10 px-4 text-sm">
             <CalendarCheck size={17} />
