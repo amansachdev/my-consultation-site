@@ -83,7 +83,7 @@
 | D-CLIN-04 | The platform **will not diagnose**; assessments are decision-support for clinicians | Essential clinical-safety guardrail. | 2026-08-15 | Clinician / Legal |
 | D-TECH-10 | Host the static landing page on **Azure Static Web Apps Free tier** with custom domain `antaran.online` and GitHub Actions CI/CD | Cheapest viable option (~$0 for current traffic); free SSL, global CDN, and simple Vite/React deployment. | 2026-08-17 | Tech |
 | D-TECH-11 | Keep the public frontend as **Vite + React** and add an **Azure Functions API** under the existing Azure Static Web App | Preserves the public deployment and avoids a Next.js migration while optional patient features are validated. | 2026-08-21 | Tech |
-| D-TECH-12 | Use **Azure Static Web Apps built-in Google authentication** for optional patient accounts | Avoids password storage and keeps the public site ungated; first-party Google sign-in creates the account on first login. | 2026-08-21 | Tech |
+| D-TECH-12 | Use **Azure Static Web Apps built-in GitHub authentication** for optional patient accounts while remaining on the Free SKU; park Google custom authentication for a future Standard SKU decision | Avoids password storage and keeps the public site ungated. The existing Google client/settings are retained for a future switch, but the Free SKU cannot deploy the custom Google provider configuration. | 2026-08-22 | Tech |
 | D-TECH-13 | Use **Cosmos DB serverless** for the initial account, booking, consent, and assessment persistence | Minimizes initial operational cost and integrates cleanly with Azure Functions; production data region still requires confirmation. | 2026-08-21 | Tech |
 
 ---

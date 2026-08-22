@@ -27,7 +27,7 @@ export function AuthProvider({ children }) {
       user,
       status,
       isAuthenticated: Boolean(user),
-      signInUrl: '/.auth/login/google?post_login_redirect_uri=/account',
+      signInUrl: '/.auth/login/github?post_login_redirect_uri=/account',
       signOutUrl: '/.auth/logout?post_logout_redirect_uri=/',
       refresh,
     }),

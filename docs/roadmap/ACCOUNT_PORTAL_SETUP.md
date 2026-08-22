@@ -1,6 +1,6 @@
 # Optional Account Portal Setup
 
-The public site does not require authentication. This feature adds optional Google sign-in through Azure Static Web Apps and a serverless Azure Functions API under `/api`.
+The public site does not require authentication. This feature adds optional GitHub sign-in through Azure Static Web Apps built-in authentication and a serverless Azure Functions API under `/api`.
 
 ## Azure application settings
 
@@ -39,15 +39,17 @@ Create these containers in the `antaran` database before enabling persistence:
 
 Use a serverless Cosmos DB account and an India region for production patient data, subject to the final hosting decision in `Q-TECH-07`.
 
-## Google sign-in
+## GitHub sign-in
 
-Enable Google authentication in the Static Web App authentication settings. Add the production custom domain and any approved preview domain as redirect origins. The frontend uses:
+The frontend uses Azure Static Web Apps' built-in GitHub provider:
 
-- `/.auth/login/google?post_login_redirect_uri=/account`
+- `/.auth/login/github?post_login_redirect_uri=/account`
 - `/.auth/me`
 - `/.auth/logout?post_logout_redirect_uri=/`
 
-First-time Google sign-in creates the optional account. No public route is protected.
+First-time GitHub sign-in creates the optional account. No public route is protected.
+
+Google custom authentication is intentionally parked for a future Standard SKU upgrade. Existing Google client settings may remain in Azure, but the provider must not be added to `staticwebapp.config.json` while the app uses the Free SKU.
 
 ## Production gates
 
@@ -59,4 +61,3 @@ Before enabling Cosmos persistence for real patients:
 - Verify the Google Form response endpoint in a non-production environment.
 - Configure cost and usage alerts for Cosmos DB.
 - Confirm access logs do not include assessment responses, booking messages, or other sensitive values.
-
