@@ -12,6 +12,7 @@ export function AccountPage() {
   const [profile, setProfile] = useState(EMPTY_PROFILE);
   const [bookings, setBookings] = useState([]);
   const [assessments, setAssessments] = useState([]);
+  const [portalLoading, setPortalLoading] = useState(true);
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -36,6 +37,9 @@ export function AccountPage() {
       })
       .catch((requestError) => {
         if (!cancelled) setError(requestError.message);
+      })
+      .finally(() => {
+        if (!cancelled) setPortalLoading(false);
       });
 
     return () => {
@@ -115,7 +119,7 @@ export function AccountPage() {
         </section>
 
         <div className="grid gap-6">
-          <PortalList title="Booking history" empty="No booking requests yet." action={<Link className="text-sm font-semibold text-moss" to="/book">Request a slot</Link>}>
+          <PortalList loading={portalLoading} title="Booking history" empty="No booking requests yet." action={<Link className="text-sm font-semibold text-moss" to="/book">Request a slot</Link>}>
             {bookings.map((booking) => (
               <div key={booking.id} className="account-list-item">
                 <div>
@@ -126,7 +130,7 @@ export function AccountPage() {
               </div>
             ))}
           </PortalList>
-          <PortalList title="Saved assessments" empty="Complete an assessment and choose to save it here." action={<Link className="text-sm font-semibold text-moss" to="/assessment">Take an assessment</Link>}>
+          <PortalList loading={portalLoading} title="Saved assessments" empty="Complete an assessment and choose to save it here." action={<Link className="text-sm font-semibold text-moss" to="/assessment">Take an assessment</Link>}>
             {assessments.map((assessment) => (
               <div key={assessment.id} className="account-list-item">
                 <div>
@@ -153,9 +157,9 @@ function AccountField({ label, type = 'text', value, onChange, ...props }) {
   return <label className="field"><span>{label}</span><input type={type} value={value || ''} onChange={(event) => onChange(event.target.value)} {...props} /></label>;
 }
 
-function PortalList({ title, empty, action, children }) {
+function PortalList({ title, empty, action, children, loading }) {
   const hasItems = Array.isArray(children) ? children.length > 0 : Boolean(children);
-  return <section className="account-panel"><div className="flex items-center justify-between gap-4"><h2 className="text-xl font-bold">{title}</h2>{action}</div><div className="mt-5 grid gap-3">{hasItems ? children : <p className="rounded-md bg-mist p-4 text-sm text-ink/60">{empty}</p>}</div></section>;
+  return <section className="account-panel"><div className="flex items-center justify-between gap-4"><h2 className="text-xl font-bold">{title}</h2>{action}</div><div className="mt-5 grid gap-3">{loading ? <p className="flex items-center gap-2 rounded-md bg-mist p-4 text-sm text-ink/60"><RefreshCw className="animate-spin" size={16} /> Loading...</p> : hasItems ? children : <p className="rounded-md bg-mist p-4 text-sm text-ink/60">{empty}</p>}</div></section>;
 }
 
 function LoadingState() {
