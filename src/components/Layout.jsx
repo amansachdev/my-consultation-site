@@ -21,7 +21,7 @@ export function Layout({ children }) {
 }
 
 function Header() {
-  const { isAuthenticated, status, signInUrl } = useAuth();
+  const { isAuthenticated, status, signIn } = useAuth();
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-mist/90 backdrop-blur">
@@ -45,7 +45,7 @@ function Header() {
           {status === 'ready' && (isAuthenticated ? (
             <Link to="/account" className="btn-secondary hidden h-10 px-4 text-sm sm:inline-flex">Account</Link>
           ) : (
-            <a href={signInUrl} className="btn-secondary hidden h-10 px-4 text-sm sm:inline-flex">Sign in</a>
+            <button type="button" onClick={signIn} className="btn-secondary hidden h-10 px-4 text-sm sm:inline-flex">Sign in with Google</button>
           ))}
           <Link to="/book" className="btn-primary h-10 px-4 text-sm">
             <CalendarCheck size={17} />

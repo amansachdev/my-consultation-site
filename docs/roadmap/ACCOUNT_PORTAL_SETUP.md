@@ -1,6 +1,6 @@
 # Optional Account Portal Setup
 
-The public site does not require authentication. This feature adds optional GitHub sign-in through Azure Static Web Apps built-in authentication and a serverless Azure Functions API under `/api`.
+The public site does not require authentication. This feature adds optional Google sign-in through Firebase Authentication and a serverless Azure Functions API under `/api`.
 
 ## Azure application settings
 
@@ -39,17 +39,26 @@ Create these containers in the `antaran` database before enabling persistence:
 
 Use a serverless Cosmos DB account and an India region for production patient data, subject to the final hosting decision in `Q-TECH-07`.
 
-## GitHub sign-in
+## Firebase Google sign-in
 
-The frontend uses Azure Static Web Apps' built-in GitHub provider:
+Create a Firebase Web App in the Google Cloud/Firebase project and enable Google under Authentication > Sign-in method. Add these values as GitHub Actions secrets so the Vite build can initialize Firebase:
 
-- `/.auth/login/github?post_login_redirect_uri=/account`
-- `/.auth/me`
-- `/.auth/logout?post_logout_redirect_uri=/`
+- `VITE_FIREBASE_API_KEY`
+- `VITE_FIREBASE_AUTH_DOMAIN`
+- `VITE_FIREBASE_PROJECT_ID`
+- `VITE_FIREBASE_STORAGE_BUCKET`
+- `VITE_FIREBASE_MESSAGING_SENDER_ID`
+- `VITE_FIREBASE_APP_ID`
 
-First-time GitHub sign-in creates the optional account. No public route is protected.
+Add `antaran.online` and the Azure Static Web Apps hostname to Firebase Authentication > Settings > Authorized domains. First-time Google sign-in creates the optional account. No public route is protected.
 
-Google custom authentication is intentionally parked for a future Standard SKU upgrade. Existing Google client settings may remain in Azure, but the provider must not be added to `staticwebapp.config.json` while the app uses the Free SKU.
+The API verifies Firebase ID tokens with these Azure Static Web App settings:
+
+- `FIREBASE_PROJECT_ID`
+- `FIREBASE_CLIENT_EMAIL`
+- `FIREBASE_PRIVATE_KEY` (service-account private key; preserve newlines as `\\n` in the setting)
+
+Never expose the Firebase Admin service-account key in frontend code or GitHub Actions logs.
 
 ## Production gates
 

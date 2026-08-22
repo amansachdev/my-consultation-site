@@ -1,5 +1,7 @@
 import { app } from '@azure/functions';
 import { CosmosClient } from '@azure/cosmos';
+import { cert, getApps, initializeApp } from 'firebase-admin/app';
+import { getAuth } from 'firebase-admin/auth';
 
 const DATABASE_NAME = process.env.COSMOS_DB_DATABASE || 'antaran';
 const GOOGLE_FORM_RESPONSE_URL = process.env.GOOGLE_FORM_RESPONSE_URL || '';
@@ -7,6 +9,7 @@ const ASSESSMENT_CONSENT_VERSION = 'assessment-storage-v1';
 const ACCOUNT_CONSENT_VERSION = 'account-storage-v1';
 
 let cosmosDatabase;
+let firebaseAuth;
 
 function json(body, status = 200) {
   return {
@@ -16,20 +19,34 @@ function json(body, status = 200) {
   };
 }
 
-function getPrincipal(request) {
-  const encodedPrincipal = request.headers.get('x-ms-client-principal');
-  if (!encodedPrincipal) return null;
+function getFirebaseAuth() {
+  if (firebaseAuth) return firebaseAuth;
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+  if (!projectId || !clientEmail || !privateKey) throw new Error('Firebase Auth is not configured.');
+  const firebaseApp = getApps().length ? getApps()[0] : initializeApp({ credential: cert({ projectId, clientEmail, privateKey }) });
+  firebaseAuth = getAuth(firebaseApp);
+  return firebaseAuth;
+}
 
+async function getPrincipal(request) {
+  const header = request.headers.get('authorization') || '';
+  if (!header.startsWith('Bearer ')) return null;
   try {
-    const principal = JSON.parse(Buffer.from(encodedPrincipal, 'base64').toString('utf8'));
-    return principal?.userId && principal?.userDetails ? principal : null;
+    const decoded = await getFirebaseAuth().verifyIdToken(header.slice(7));
+    return {
+      userId: decoded.uid,
+      userDetails: decoded.email || '',
+      identityProvider: decoded.firebase?.sign_in_provider || 'google.com',
+    };
   } catch {
     return null;
   }
 }
 
-function requirePrincipal(request) {
-  const principal = getPrincipal(request);
+async function requirePrincipal(request) {
+  const principal = await getPrincipal(request);
   if (!principal) return { response: json({ error: 'Sign-in is required.' }, 401) };
   return { principal };
 }
@@ -70,6 +87,9 @@ function handleServerError(context, error) {
   context.error(error);
   if (error.message === 'Cosmos DB is not configured.') {
     return json({ error: 'Account storage is not configured yet.' }, 503);
+  }
+  if (error.message === 'Firebase Auth is not configured.') {
+    return json({ error: 'Sign-in is not configured yet.' }, 503);
   }
   return json({ error: 'We could not complete that request. Please try again.' }, 500);
 }
@@ -150,7 +170,7 @@ app.http('me', {
   authLevel: 'anonymous',
   route: 'me',
   handler: async (request) => {
-    const principal = getPrincipal(request);
+    const principal = await getPrincipal(request);
     return json({ authenticated: Boolean(principal), user: principal ? { id: principal.userId, email: principal.userDetails, provider: principal.identityProvider } : null });
   },
 });
@@ -160,7 +180,7 @@ app.http('profile', {
   authLevel: 'anonymous',
   route: 'profile',
   handler: async (request, context) => {
-    const auth = requirePrincipal(request);
+    const auth = await requirePrincipal(request);
     if (auth.response) return auth.response;
     try {
       if (request.method === 'GET') return json({ profile: await readUserItem('profiles', auth.principal.userId) });
@@ -181,7 +201,7 @@ app.http('bookings', {
   authLevel: 'anonymous',
   route: 'bookings',
   handler: async (request, context) => {
-    const auth = requirePrincipal(request);
+    const auth = await requirePrincipal(request);
     if (auth.response) return auth.response;
     try {
       const bookings = container('bookingRequests');
@@ -210,7 +230,7 @@ app.http('assessments', {
   authLevel: 'anonymous',
   route: 'assessments',
   handler: async (request, context) => {
-    const auth = requirePrincipal(request);
+    const auth = await requirePrincipal(request);
     if (auth.response) return auth.response;
     try {
       const assessments = container('assessments');

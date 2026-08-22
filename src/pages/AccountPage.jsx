@@ -7,7 +7,7 @@ import { apiRequest } from '../lib/api';
 const EMPTY_PROFILE = { fullName: '', age: '', city: '', state: '', phone: '' };
 
 export function AccountPage() {
-  const { user, status, isAuthenticated, signInUrl, signOutUrl } = useAuth();
+  const { user, status, isAuthenticated, signOut } = useAuth();
   const navigate = useNavigate();
   const [profile, setProfile] = useState(EMPTY_PROFILE);
   const [bookings, setBookings] = useState([]);
@@ -78,10 +78,10 @@ export function AccountPage() {
             Your public browsing and booking access stays open. Sign in when you want to save your details and view your care history.
           </p>
         </div>
-        <a href={signOutUrl} className="btn-secondary shrink-0">
+        <button type="button" onClick={signOut} className="btn-secondary shrink-0">
           <LogOut size={17} />
           Sign out
-        </a>
+        </button>
       </div>
 
       <div className="mt-10 grid gap-6 lg:grid-cols-[0.9fr_1.1fr]">
@@ -90,7 +90,7 @@ export function AccountPage() {
             <UserRound className="text-clay" size={22} />
             <div>
               <h2 className="text-xl font-bold">Profile</h2>
-              <p className="text-sm text-ink/60">Signed in as {user.userDetails}</p>
+              <p className="text-sm text-ink/60">Signed in as {user.email}</p>
             </div>
           </div>
           <form className="mt-6 grid gap-4" onSubmit={saveProfile}>

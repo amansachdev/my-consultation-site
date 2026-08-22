@@ -1,10 +1,13 @@
 const API_BASE = '/api';
+import { firebaseAuth } from './firebase';
 
 export async function apiRequest(path, options = {}) {
+  const token = firebaseAuth?.currentUser ? await firebaseAuth.currentUser.getIdToken() : null;
   const response = await fetch(`${API_BASE}${path}`, {
     credentials: 'include',
     headers: {
       'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...(options.headers || {}),
     },
     ...options,
@@ -25,4 +28,3 @@ export async function apiRequest(path, options = {}) {
 
   return body;
 }
-

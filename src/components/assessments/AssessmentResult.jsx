@@ -5,7 +5,7 @@ import { useAuth } from '../../context/useAuth';
 import { apiRequest } from '../../lib/api';
 
 export function AssessmentResult({ title, score, severity, isHighRisk, responses, onReset }) {
-  const { isAuthenticated, signInUrl } = useAuth();
+  const { isAuthenticated, signIn } = useAuth();
   const [consent, setConsent] = useState(false);
   const [saveState, setSaveState] = useState('idle');
   const [saveError, setSaveError] = useState('');
@@ -67,7 +67,7 @@ export function AssessmentResult({ title, score, severity, isHighRisk, responses
           {saveError && <p className="mt-3 text-sm font-medium text-semantic-danger" role="alert">{saveError}</p>}
         </div>
       ) : (
-        <a href={signInUrl} className="btn-secondary justify-center"><LogIn size={17} /> Sign in to save this assessment</a>
+        <button type="button" onClick={signIn} className="btn-secondary justify-center"><LogIn size={17} /> Sign in with Google to save</button>
       )}
 
       <button

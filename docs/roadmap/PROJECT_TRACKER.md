@@ -29,7 +29,7 @@
 - **MVP clinician model:** Founder-only, architected for multi-clinician expansion
 - **Current code:** Public Vite + React + Tailwind site with optional account portal and Azure Functions API
 - **Backend:** Azure Functions API scaffolded; Cosmos DB persistence requires Azure configuration
-- **Auth:** Optional GitHub sign-in through Azure Static Web Apps built-in authentication; Google is parked for a future Standard SKU upgrade
+- **Auth:** Optional Google sign-in through Firebase Authentication; public routes remain ungated
 - **Database, video, payments:** Database integration scaffolded; video and payments not started
 - **Design system:** Tokens seeded; legacy landing page still uses original color aliases
 
@@ -40,7 +40,7 @@
 | ID | Module | Phase | Status | Key Deliverables | Blockers / Open Questions |
 |----|--------|-------|--------|------------------|---------------------------|
 | M0 | Foundation & Design System | MVP | In Progress | `AGENTS.md`, design tokens, Tailwind wiring, folder structure, repo conventions, CI lint/build | Q-BIZ-01 (final brand/domain) resolved: domain is `antaran.online`; DS-01 (color finalization) |
-| M1 | Identity, Auth & MFA | MVP | In Progress | Optional GitHub sign-in through Azure SWA built-in auth, account route, session-aware UI; Google custom auth parked until a Standard SKU decision; clinician/admin MFA remains future work | Q-TECH-07 (hosting region) |
+| M1 | Identity, Auth & MFA | MVP | In Progress | Optional Firebase Google sign-in, account route, Firebase-token API verification, and session-aware UI; clinician/admin MFA remains future work | Q-TECH-07 (hosting region) |
 | M2 | Patient Portal & Onboarding | MVP | In Progress | Optional profile, booking history, consent capture, dashboard; document upload and emergency contact deferred | Q-LEGAL-02 (consent wording), Q-LEGAL-05 (DPDP consent) |
 | M3 | Clinical Intake & Assessments | MVP | In Progress | PHQ-9/GAD-7 scoring, crisis banner, optional consented score/response storage | Q-CLIN-03 (intake scope), Q-CLIN-04 (risk thresholds), D-CLIN-04 (no diagnosis) |
 | M4 | Booking, Calendar & Availability | MVP | Planned | Service catalogue, clinician availability slots, appointment booking/reschedule/cancel, reminders (SMS/email/push), timezone handling | Q-BIZ-02 (online vs in-person), Q-BIZ-03 (pricing), Q-CLIN-01 (service catalogue), Q-CLIN-07 (follow-up window) |
@@ -88,7 +88,7 @@
 
 | ID | What is blocked | Question / dependency | Owner |
 |----|-----------------|----------------------|-------|
-| B-01 | Azure account persistence | Configure Cosmos DB, Functions settings, built-in GitHub auth, and production secrets; Google provider parked | Tech / Admin |
+| B-01 | Azure account persistence | Configure Cosmos DB, Firebase token verification settings, and production secrets | Tech / Admin |
 | B-02 | Pricing & payout logic | Required to build booking, payment, and clinician earnings modules | Admin / Clinician |
 | B-03 | Consent / legal wording | Required to build onboarding and data-handling flows | Legal |
 | B-04 | Emergency referral directory | Required to build safety workflows | Clinician |
@@ -107,3 +107,4 @@
 | 2026-08-18 | Added Antaran favicon, social preview image, canonical metadata, Open Graph/Twitter tags, and MedicalClinic JSON-LD to the landing page | Agent |
 | 2026-08-21 | Added optional Google sign-in, account portal, consented assessment storage, signed-in booking history, Azure Functions API, and Cosmos DB integration scaffold | Agent |
 | 2026-08-22 | Switched the optional sign-in path to built-in GitHub auth so the app remains deployable on the Azure Static Web Apps Free SKU; Google configuration parked for a future Standard upgrade | Agent |
+| 2026-08-22 | Replaced Azure/GitHub session auth with optional Firebase Google sign-in and server-side Firebase ID-token verification; deployment secrets still required | Agent |
