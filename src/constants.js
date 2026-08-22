@@ -19,15 +19,10 @@ export const doctor = {
 
 export const consultationTypes = [
   {
-    title: 'Initial Consultation',
-    duration: '45-60 min',
+    title: 'Psychiatric Consultation',
+    duration: '30-60 min',
     description:
-      'A first appointment to understand symptoms, history, and goals.',
-  },
-  {
-    title: 'Follow-up',
-    duration: '20-30 min',
-    description: 'Ongoing support, medication review, and care-plan adjustments.',
+      'A private online consultation shaped around your concerns, history, and goals. The duration is tailored to what you need.',
   },
 ];
 

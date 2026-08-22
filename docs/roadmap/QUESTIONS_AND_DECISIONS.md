@@ -28,7 +28,7 @@
 | Q-BIZ-06 | Business | GST registration status and invoicing requirements | Need GSTIN for tax invoices? Required for invoice module. | Admin / Legal | Open |
 | Q-BIZ-07 | Business | Languages and regions supported at launch | Hindi, English, regional languages affect copy, forms, and SMS templates. | Admin | Open |
 | Q-BIZ-08 | Business | Insurance or corporate/EAP tie-ins in MVP? | Likely Phase 2, but affects data model if needed earlier. | Admin | Deferred |
-| Q-CLIN-01 | Clinical | Exact service catalogue, durations, and eligibility | Which services are offered, by whom, and for which age/gender/condition filters? | Clinician | Open |
+| Q-CLIN-01 | Clinical | Exact service catalogue, durations, and eligibility | MVP currently offers one adult Psychiatric Consultation with a flexible 30-60 minute duration; Dr Medha is the sole clinician. Additional service types remain deferred. | Clinician | Decided |
 | Q-CLIN-02 | Clinical | Clinician credential-verification checklist | MCI/NMC registration, state medical council, degree certificates, PAN/bank KYC? | Clinician / Legal | Open |
 | Q-CLIN-03 | Clinical | Intake questionnaire beyond PHQ-9 / GAD-7 | Bipolar / ADHD / sleep / substance-use / suicide risk screening scope. | Clinician | Open |
 | Q-CLIN-04 | Clinical | Risk thresholds that trigger emergency workflow | e.g., PHQ-9 item 9 score >0, explicit ideation, psychosis screen positive. | Clinician | Open |
@@ -85,6 +85,7 @@
 | D-TECH-11 | Keep the public frontend as **Vite + React** and add an **Azure Functions API** under the existing Azure Static Web App | Preserves the public deployment and avoids a Next.js migration while optional patient features are validated. | 2026-08-21 | Tech |
 | D-TECH-12 | Use **Firebase Authentication with Google** for optional patient accounts while keeping Azure Static Web Apps on the Free SKU | Avoids password storage and keeps the public site ungated. Firebase ID tokens are verified by the Azure Functions API; Cosmos DB remains the persistence layer. | 2026-08-22 | Tech |
 | D-TECH-13 | Use **Cosmos DB serverless** for the initial account, booking, consent, and assessment persistence | Minimizes initial operational cost and integrates cleanly with Azure Functions; production data region still requires confirmation. | 2026-08-21 | Tech |
+| D-CLIN-05 | MVP service catalogue is one **Psychiatric Consultation** for adults 18+, with a flexible **30-60 minute** duration | Keeps the initial patient-facing offer clear while allowing the clinician to adapt session length to patient needs. | 2026-08-22 | Clinician / Admin |
 
 ---
 

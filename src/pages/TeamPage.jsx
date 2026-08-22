@@ -1,5 +1,5 @@
 import { Mail, MapPin, Phone } from 'lucide-react';
-import teamImage from '../../assets/1.jpeg';
+import teamImage from '../../assets/dr medha profile.png';
 import { doctor } from '../constants';
 
 export function TeamPage() {
@@ -9,8 +9,8 @@ export function TeamPage() {
         <p className="eyebrow">Know your team</p>
         <h2>Meet the clinician behind Antaran.</h2>
         <p>
-          A psychiatrist-led practice built on listening carefully and planning
-          thoughtfully.
+          Psychiatric care grounded in careful listening, clinical experience,
+          and thoughtful planning.
         </p>
       </div>
 
@@ -30,10 +30,13 @@ export function TeamPage() {
             <p className="text-lg font-medium text-moss">{doctor.qualification}</p>
           </div>
           <p className="leading-7 text-ink/70">
-            Dr Medha leads Antaran with a focus on evidence-based psychiatric
-            care, delivered with empathy. She works with adults on concerns such
-            as anxiety, low mood, stress, sleep, and medication management — all
-            through secure online consultations.
+            Dr Medha is a Consultant Psychiatrist with an MBBS and MD in
+            Psychiatry, currently completing a Clinical Post-Doctoral Fellowship
+            at NIMHANS, Bengaluru. Her experience includes psychiatric
+            assessment and management across concerns such as anxiety, low
+            mood, sleep, stress, addiction, and medication care. She brings an
+            evidence-based, patient-centred approach to secure online
+            consultations.
           </p>
           <div className="space-y-2 text-sm text-ink/72">
             <div className="flex items-center gap-3">

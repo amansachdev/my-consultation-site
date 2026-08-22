@@ -166,7 +166,7 @@ function Consultations() {
     <section id="consultations" className="section">
       <div className="section-heading">
         <p className="eyebrow">Consultations</p>
-        <h2>Choose the right appointment type.</h2>
+        <h2>Start with a psychiatric consultation.</h2>
         <p>
           Flexible, confidential online psychiatric care designed around your
           schedule and comfort.
