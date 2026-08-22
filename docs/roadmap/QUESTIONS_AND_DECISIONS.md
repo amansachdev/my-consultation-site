@@ -86,6 +86,7 @@
 | D-TECH-12 | Use **Firebase Authentication with Google** for optional patient accounts while keeping Azure Static Web Apps on the Free SKU | Avoids password storage and keeps the public site ungated. Firebase ID tokens are verified by the Azure Functions API; Cosmos DB remains the persistence layer. | 2026-08-22 | Tech |
 | D-TECH-13 | Use **Cosmos DB serverless** for the initial account, booking, consent, and assessment persistence | Minimizes initial operational cost and integrates cleanly with Azure Functions; production data region still requires confirmation. | 2026-08-21 | Tech |
 | D-CLIN-05 | MVP service catalogue is one **Psychiatric Consultation** for adults 18+, with a flexible **30-60 minute** duration | Keeps the initial patient-facing offer clear while allowing the clinician to adapt session length to patient needs. | 2026-08-22 | Clinician / Admin |
+| D-TECH-14 | Save guest and signed-in booking requests directly to Cosmos DB and notify `antaran.health@gmail.com` through Resend | Removes the two-step Google Form flow. Email contains only basic booking details; the patient receives an on-site confirmation. | 2026-08-22 | Tech / Admin |
 
 ---
 

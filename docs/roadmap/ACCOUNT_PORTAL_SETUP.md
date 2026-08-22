@@ -10,7 +10,9 @@ Configure these settings on the Antaran Static Web App. Do not commit values to 
 COSMOS_DB_ENDPOINT=https://<account>.documents.azure.com:443/
 COSMOS_DB_KEY=<cosmos-key>
 COSMOS_DB_DATABASE=antaran
-GOOGLE_FORM_RESPONSE_URL=https://docs.google.com/forms/d/e/<form-id>/formResponse
+RESEND_API_KEY=<resend-api-key>
+BOOKING_NOTIFICATION_TO=antaran.health@gmail.com
+BOOKING_FROM_EMAIL=bookings@antaran.online
 ```
 
 Example CLI shape:
@@ -23,7 +25,9 @@ az staticwebapp appsettings set \
     COSMOS_DB_ENDPOINT="https://<account>.documents.azure.com:443/" \
     COSMOS_DB_KEY="<cosmos-key>" \
     COSMOS_DB_DATABASE="antaran" \
-    GOOGLE_FORM_RESPONSE_URL="https://docs.google.com/forms/d/e/<form-id>/formResponse"
+    RESEND_API_KEY="<resend-api-key>" \
+    BOOKING_NOTIFICATION_TO="antaran.health@gmail.com" \
+    BOOKING_FROM_EMAIL="bookings@antaran.online"
 ```
 
 ## Cosmos DB containers
@@ -33,7 +37,7 @@ Create these containers in the `antaran` database before enabling persistence:
 | Container | Partition key | Purpose |
 |-----------|---------------|---------|
 | `profiles` | `/userId` | Patient profile data |
-| `bookingRequests` | `/userId` | Signed-in booking requests and statuses |
+| `bookingRequests` | `/userId` | Guest and signed-in booking requests and statuses; guest records use `guest` |
 | `assessments` | `/userId` | Explicitly consented PHQ-9/GAD-7 responses and scores |
 | `consents` | `/userId` | Consent version and timestamp records |
 
@@ -60,6 +64,10 @@ The API verifies Firebase ID tokens with these Azure Static Web App settings:
 
 Never expose the Firebase Admin service-account key in frontend code or GitHub Actions logs.
 
+## Booking notifications
+
+Guest and signed-in patients submit directly to `/api/bookings`. The API saves the request to Cosmos DB before sending a basic notification through Resend. The notification goes to `BOOKING_NOTIFICATION_TO` and does not include the patient's message or assessment data. Verify `antaran.online` in Resend before using `BOOKING_FROM_EMAIL`.
+
 ## Production gates
 
 Before enabling Cosmos persistence for real patients:
@@ -67,6 +75,6 @@ Before enabling Cosmos persistence for real patients:
 - Replace the account-storage and assessment-storage consent copy with Legal-approved wording.
 - Confirm DPDP/privacy notice links and consent-retention requirements.
 - Confirm clinical approval of assessment risk thresholds and crisis-resource copy.
-- Verify the Google Form response endpoint in a non-production environment.
+- Verify Resend domain authentication and notification delivery in a non-production environment.
 - Configure cost and usage alerts for Cosmos DB.
 - Confirm access logs do not include assessment responses, booking messages, or other sensitive values.

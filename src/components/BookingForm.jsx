@@ -4,8 +4,6 @@ import { useLocation } from 'react-router-dom';
 import {
   consultationTypes,
   doctor,
-  GOOGLE_FORM_BASE,
-  GOOGLE_FORM_ENTRIES,
 } from '../constants';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
@@ -20,6 +18,7 @@ export function BookingForm() {
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [bookingConsentGiven, setBookingConsentGiven] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
 
   const todayString = useMemo(() => {
@@ -33,6 +32,7 @@ export function BookingForm() {
     const form = event.currentTarget;
     const formData = new FormData(form);
     const data = Object.fromEntries(formData.entries());
+    setSubmitError('');
 
     const validationErrors = validate(data, todayString);
     setErrors(validationErrors);
@@ -52,21 +52,11 @@ export function BookingForm() {
       return;
     }
 
-    if (isAuthenticated) {
-      submitBooking(data, form);
+    if (!bookingConsentGiven) {
+      setSubmitError('Please confirm that Antaran may use these details to contact you about this booking request.');
       return;
     }
-
-    const params = new URLSearchParams();
-    Object.entries(GOOGLE_FORM_ENTRIES).forEach(([field, entryId]) => {
-      const value = formData.get(field);
-      if (value) params.set(entryId, String(value));
-    });
-
-    window.open(`${GOOGLE_FORM_BASE}&${params.toString()}`, '_blank', 'noopener,noreferrer');
-    form.reset();
-    setErrors({});
-    setTouched({});
+    submitBooking(data, form);
   };
 
   const submitBooking = async (data, form) => {
@@ -84,6 +74,8 @@ export function BookingForm() {
           preferredDate: data.date,
           preferredTime: data.time,
           message: data.message || '',
+          bookingConsentGiven,
+          bookingConsentVersion: 'booking-contact-v1',
           consentGiven,
           consentVersion: 'account-storage-v1',
         }),
@@ -91,6 +83,8 @@ export function BookingForm() {
       form.reset();
       setErrors({});
       setTouched({});
+      setBookingConsentGiven(false);
+      setConsentGiven(false);
       setSubmitted(true);
     } catch (error) {
       setSubmitError(error.message);
@@ -123,9 +117,7 @@ export function BookingForm() {
             Request a consultation.
           </h2>
           <p className="mt-5 text-lg leading-8 text-ink/70">
-            Fill in your details below. {isAuthenticated
-              ? 'Your request will be saved to your account so you can track it.'
-              : 'We will open a short Google Form with your information pre-filled so you can review and submit it.'}
+            Fill in your details below. Your request will be saved securely and the clinic team will contact you to confirm availability.
           </p>
           <div className="mt-8 space-y-4 text-sm text-ink/72">
             <ContactRow icon={Phone} label="Phone" value={doctor.phone} />
@@ -222,6 +214,10 @@ export function BookingForm() {
               rows="4"
               placeholder="Share a short note. Avoid emergency details here."
             />
+          </label>
+          <label className="flex gap-3 text-sm leading-6 text-ink/80">
+            <input type="checkbox" checked={bookingConsentGiven} onChange={(event) => setBookingConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-forest" />
+            <span>I consent to Antaran using these details to contact me about this booking request.</span>
           </label>
           {isAuthenticated && (
             <label className="flex gap-3 text-sm leading-6 text-ink/80">

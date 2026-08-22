@@ -26,20 +26,6 @@ export const consultationTypes = [
   },
 ];
 
-export const GOOGLE_FORM_BASE =
-  'https://docs.google.com/forms/d/e/1FAIpQLSdbdGQpTFU8T9KH-H6M9-PvqzBAhcteDhQDIUo2FXuVZesukQ/viewform?usp=pp_url';
-
-export const GOOGLE_FORM_ENTRIES = {
-  name: 'entry.1757509789',
-  age: 'entry.1385558754',
-  phone: 'entry.272098946',
-  email: 'entry.1222143642',
-  consultationType: 'entry.1226581237',
-  date: 'entry.1538227956',
-  time: 'entry.2033637864',
-  message: 'entry.1615957077',
-};
-
 export const careAreas = [
   'Anxiety and stress',
   'Low mood and depression',

@@ -4,9 +4,12 @@ import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
 
 const DATABASE_NAME = process.env.COSMOS_DB_DATABASE || 'antaran';
-const GOOGLE_FORM_RESPONSE_URL = process.env.GOOGLE_FORM_RESPONSE_URL || '';
+const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
+const BOOKING_NOTIFICATION_TO = process.env.BOOKING_NOTIFICATION_TO || 'antaran.health@gmail.com';
+const BOOKING_FROM_EMAIL = process.env.BOOKING_FROM_EMAIL || '';
 const ASSESSMENT_CONSENT_VERSION = 'assessment-storage-v1';
 const ACCOUNT_CONSENT_VERSION = 'account-storage-v1';
+const BOOKING_CONSENT_VERSION = 'booking-contact-v1';
 
 let cosmosDatabase;
 let firebaseAuth;
@@ -150,21 +153,34 @@ function scoreAssessment(type, responses) {
   };
 }
 
-async function forwardBooking(booking, user) {
-  if (!GOOGLE_FORM_RESPONSE_URL) return false;
-  const form = new URLSearchParams({
-    'entry.1757509789': booking.fullName,
-    'entry.1385558754': String(booking.age),
-    'entry.272098946': booking.phone,
-    'entry.1222143642': booking.email,
-    'entry.1226581237': booking.consultationType,
-    'entry.1538227956': booking.preferredDate,
-    'entry.2033637864': booking.preferredTime,
-    'entry.1615957077': booking.message,
+async function notifyBooking(booking) {
+  if (!RESEND_API_KEY || !BOOKING_FROM_EMAIL) return 'not_configured';
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: `Antaran bookings <${BOOKING_FROM_EMAIL}>`,
+      to: [BOOKING_NOTIFICATION_TO],
+      reply_to: 'antaran.health@gmail.com',
+      subject: `New booking request: ${booking.fullName}`,
+      text: [
+        'A new booking request was submitted on antaran.online.',
+        '',
+        `Name: ${booking.fullName}`,
+        `Phone: ${booking.phone}`,
+        `Email: ${booking.email}`,
+        `Consultation: ${booking.consultationType}`,
+        `Preferred date: ${booking.preferredDate}`,
+        `Preferred time: ${booking.preferredTime} IST`,
+        `Booking ID: ${booking.id}`,
+      ].join('\n'),
+    }),
   });
-  form.set('entry.1615957077', `${booking.message}\nAccount email: ${user.userDetails}`.trim());
-  const response = await fetch(GOOGLE_FORM_RESPONSE_URL, { method: 'POST', body: form, redirect: 'manual' });
-  return response.ok || response.status === 302 || response.status === 303;
+  if (!response.ok) throw new Error(`Resend notification failed with status ${response.status}.`);
+  return 'sent';
 }
 
 app.http('me', {
@@ -203,24 +219,29 @@ app.http('bookings', {
   authLevel: 'anonymous',
   route: 'bookings',
   handler: async (request, context) => {
-    const auth = await requirePrincipal(request);
-    if (auth.response) return auth.response;
+    const principal = await getPrincipal(request);
     try {
       const bookings = container('bookingRequests');
       if (request.method === 'GET') {
-        const { resources } = await bookings.items.query({ query: 'SELECT * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC', parameters: [{ name: '@userId', value: auth.principal.userId }] }).fetchAll();
+        if (!principal) return json({ error: 'Sign-in is required.' }, 401);
+        const { resources } = await bookings.items.query({ query: 'SELECT * FROM c WHERE c.userId = @userId ORDER BY c.createdAt DESC', parameters: [{ name: '@userId', value: principal.userId }] }).fetchAll();
         return json({ bookings: resources });
       }
       const body = await request.json();
-      if (body.consentGiven !== true || body.consentVersion !== ACCOUNT_CONSENT_VERSION) return json({ error: 'Account storage consent is required.' }, 400);
+      if (body.bookingConsentGiven !== true || body.bookingConsentVersion !== BOOKING_CONSENT_VERSION) return json({ error: 'Booking contact consent is required.' }, 400);
+      if (principal && (body.consentGiven !== true || body.consentVersion !== ACCOUNT_CONSENT_VERSION)) return json({ error: 'Account storage consent is required.' }, 400);
       const booking = validateBooking(body);
       if (!booking) return json({ error: 'Please complete the required booking fields.' }, 400);
-      const record = { id: crypto.randomUUID(), userId: auth.principal.userId, ...booking, status: 'requested', createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-      await recordConsent(auth.principal.userId, ACCOUNT_CONSENT_VERSION);
+      const userId = principal?.userId || 'guest';
+      const record = { id: crypto.randomUUID(), userId, isGuest: !principal, ...booking, status: 'requested', notificationStatus: 'pending', bookingConsentVersion: BOOKING_CONSENT_VERSION, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      if (principal) await recordConsent(principal.userId, ACCOUNT_CONSENT_VERSION);
       await bookings.items.create(record);
-      let forwarded = false;
-      try { forwarded = await forwardBooking(record, auth.principal); } catch (error) { context.warn(`Booking ${record.id} was saved but forwarding failed.`); }
-      return json({ booking: record, forwarded });
+      let notificationStatus = 'failed';
+      try { notificationStatus = await notifyBooking(record); } catch (error) { context.warn(`Booking ${record.id} was saved but notification failed.`); }
+      record.notificationStatus = notificationStatus;
+      record.updatedAt = new Date().toISOString();
+      await bookings.items.upsert(record);
+      return json({ booking: { id: record.id, status: record.status, notificationStatus }, message: 'Your booking request has been received.' }, 201);
     } catch (error) {
       return handleServerError(context, error);
     }
