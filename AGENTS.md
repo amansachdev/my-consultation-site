@@ -50,11 +50,24 @@ See `ARCHITECTURE_PLAN.md` for details.
 
 ## How to make changes
 
-1. Create a feature branch (unless told otherwise).
+1. Always create a feature branch. Never commit directly to `main`.
 2. Implement the smallest change that satisfies the requirement.
 3. Run `npm run build` and `npm run lint` before committing.
 4. Update the relevant roadmap/tracker documents.
 5. Commit with a clear message referencing the module ID if applicable (e.g., `docs: update M4 booking decisions`).
+6. Push the feature branch and open a pull request. Never push directly to `main`.
+7. Do not merge the pull request or trigger production deployment; the repository owner reviews and merges it.
+
+## Deployment and security guardrails
+
+- Before opening a pull request, run `npm run lint`, `npm run build`, and `git diff --check`.
+- For user-facing changes, run the local dev server and provide the local URL for review before opening the pull request when practical.
+- Never create real bookings, Google Calendar events, emails, or patient records during testing without explicit approval.
+- Never print, commit, or paste secrets, API keys, OAuth tokens, Firebase service-account files, or PHI.
+- Never modify Azure resources, app settings, Cosmos containers, DNS, or production secrets without explicit approval.
+- Never run destructive commands such as `git reset --hard`, `git checkout --`, or deleting files unless explicitly requested.
+- Preserve unrelated working-tree changes; do not revert changes made by the user or another agent.
+- Keep production deployment behind the approved pull request merge and GitHub Actions workflow.
 
 ## Decision authority
 
