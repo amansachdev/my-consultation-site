@@ -46,6 +46,9 @@ function Hero() {
             <Sparkles size={16} />
             Online mental health consultations
           </p>
+          <p className="max-w-lg text-sm font-medium text-moss/80">
+            Antaran means a passage forward, with thoughtful care for your emotional health.
+          </p>
           <h1 className="py-2 font-serif text-5xl font-semibold leading-[1.1] md:text-7xl">
             Care that starts with being heard.
           </h1>
