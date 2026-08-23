@@ -174,6 +174,7 @@ async function notifyBooking(booking) {
         `Consultation: ${booking.consultationType}`,
         `Preferred date: ${booking.preferredDate}`,
         `Preferred time: ${booking.preferredTime} IST`,
+        `Add to calendar: ${booking.calendarEventUrl || 'Not available yet'}`,
         `Meeting link: ${booking.meetingUrl || 'Not created yet'}`,
         `Booking ID: ${booking.id}`,
       ].join('\n'),
@@ -188,6 +189,7 @@ async function notifyBooking(booking) {
         `Requested date: ${booking.preferredDate}`,
         `Requested time: ${booking.preferredTime} IST`,
         '',
+        booking.calendarEventUrl ? `Add to your Google Calendar: ${booking.calendarEventUrl}` : '',
         booking.meetingUrl ? `Join your Google Meet: ${booking.meetingUrl}` : 'The clinic team will follow up with your meeting details.',
         '',
         'The clinic team will confirm the timing with you.',
@@ -260,7 +262,7 @@ async function createGoogleMeeting(booking) {
   const event = await response.json();
   const meetingUrl = event.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === 'video')?.uri;
   if (!meetingUrl) throw new Error('Google Calendar created an event without a Meet link.');
-  return { meetingStatus: 'created', meetingUrl, calendarEventId: event.id, meetingStartAt: times.start, meetingEndAt: times.end };
+  return { meetingStatus: 'created', meetingUrl, calendarEventId: event.id, calendarEventUrl: event.htmlLink || null, meetingStartAt: times.start, meetingEndAt: times.end };
 }
 
 app.http('me', {
@@ -328,7 +330,7 @@ app.http('bookings', {
       record.notificationStatus = notificationStatus;
       record.updatedAt = new Date().toISOString();
       await bookings.items.upsert(record);
-      return json({ booking: { id: record.id, status: record.status, meetingStatus, meetingUrl: record.meetingUrl || null, meetingStartAt: record.meetingStartAt || null, notificationStatus }, message: 'Your booking request has been received.' }, 201);
+      return json({ booking: { id: record.id, status: record.status, meetingStatus, meetingUrl: record.meetingUrl || null, calendarEventUrl: record.calendarEventUrl || null, meetingStartAt: record.meetingStartAt || null, notificationStatus }, message: 'Your booking request has been received.' }, 201);
     } catch (error) {
       return handleServerError(context, error);
     }

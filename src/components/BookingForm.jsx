@@ -132,7 +132,8 @@ export function BookingForm() {
             <p className="eyebrow">Request received</p>
             <h2 className="font-serif text-3xl font-semibold">We have your request.</h2>
             <p className="leading-7 text-ink/70">The clinic team will review your preferred time and contact you to confirm availability.</p>
-            {bookingResult?.meetingUrl && <a className="btn-primary justify-self-start" href={bookingResult.meetingUrl} target="_blank" rel="noreferrer">Join Google Meet <ArrowRight size={17} /></a>}
+            {bookingResult?.calendarEventUrl && <a className="btn-primary justify-self-start" href={bookingResult.calendarEventUrl} target="_blank" rel="noreferrer">Add to Google Calendar <ArrowRight size={17} /></a>}
+            {bookingResult?.meetingUrl && <p className="text-sm text-ink/60">Your Google Meet link has been sent to your email. It will be available to join 15 minutes before the consultation.</p>}
             <button type="button" className="btn-secondary justify-self-start" onClick={() => setSubmitted(false)}>Send another request</button>
           </div>
         ) : <form className="booking-form" onSubmit={handleSubmit} noValidate>
