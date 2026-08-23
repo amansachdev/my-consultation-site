@@ -17,7 +17,6 @@ export function BookingForm() {
   const [touched, setTouched] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
-  const [bookingResult, setBookingResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [bookingConsentGiven, setBookingConsentGiven] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
@@ -64,7 +63,7 @@ export function BookingForm() {
     setSubmitting(true);
     setSubmitError('');
     try {
-      const response = await apiRequest('/bookings', {
+      await apiRequest('/bookings', {
         method: 'POST',
         body: JSON.stringify({
           fullName: data.name,
@@ -86,7 +85,6 @@ export function BookingForm() {
       setTouched({});
       setBookingConsentGiven(false);
       setConsentGiven(false);
-      setBookingResult(response.booking);
       setSubmitted(true);
     } catch (error) {
       setSubmitError(error.message);
@@ -132,8 +130,8 @@ export function BookingForm() {
             <p className="eyebrow">Request received</p>
             <h2 className="font-serif text-3xl font-semibold">We have your request.</h2>
             <p className="leading-7 text-ink/70">The clinic team will review your preferred time and contact you to confirm availability.</p>
-            {bookingResult?.calendarAddUrl && <a className="btn-primary justify-self-start" href={bookingResult.calendarAddUrl} target="_blank" rel="noreferrer">Add to Google Calendar <ArrowRight size={17} /></a>}
-            {bookingResult?.meetingUrl && <p className="text-sm text-ink/60">Your Google Meet link has been sent to your email. It will be available to join 15 minutes before the consultation.</p>}
+            <p className="leading-7 text-ink/70">Your booking details and meeting information have been sent to your email. The meeting link will be available to join 15 minutes before the consultation.</p>
+            {isAuthenticated && <p className="text-sm text-ink/60">You can also review this booking anytime from My account.</p>}
             <button type="button" className="btn-secondary justify-self-start" onClick={() => setSubmitted(false)}>Send another request</button>
           </div>
         ) : <form className="booking-form" onSubmit={handleSubmit} noValidate>
