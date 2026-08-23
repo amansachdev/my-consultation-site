@@ -139,7 +139,7 @@ export function AccountPage() {
                       Join meeting <ExternalLink size={14} />
                     </a>
                   ) : <span className="text-xs text-ink/50">Join opens 15 minutes before</span>)}
-                  {booking.calendarEventUrl && <a className="inline-flex items-center gap-1 text-xs font-semibold text-ink/60" href={booking.calendarEventUrl} target="_blank" rel="noreferrer">
+                  {(booking.calendarAddUrl || booking.calendarEventUrl) && <a className="inline-flex items-center gap-1 text-xs font-semibold text-ink/60" href={booking.calendarAddUrl || booking.calendarEventUrl} target="_blank" rel="noreferrer">
                     Add to calendar <ExternalLink size={12} />
                   </a>}
                 </div>

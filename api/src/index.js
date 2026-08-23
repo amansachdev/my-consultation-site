@@ -174,7 +174,7 @@ async function notifyBooking(booking) {
         `Consultation: ${booking.consultationType}`,
         `Preferred date: ${booking.preferredDate}`,
         `Preferred time: ${booking.preferredTime} IST`,
-        `Add to calendar: ${booking.calendarEventUrl || 'Not available yet'}`,
+        `Add to calendar: ${booking.calendarAddUrl || 'Not available yet'}`,
         `Meeting link: ${booking.meetingUrl || 'Not created yet'}`,
         `Booking ID: ${booking.id}`,
       ].join('\n'),
@@ -189,7 +189,7 @@ async function notifyBooking(booking) {
         `Requested date: ${booking.preferredDate}`,
         `Requested time: ${booking.preferredTime} IST`,
         '',
-        booking.calendarEventUrl ? `Add to your Google Calendar: ${booking.calendarEventUrl}` : '',
+        booking.calendarAddUrl ? `Add to your Google Calendar: ${booking.calendarAddUrl}` : '',
         booking.meetingUrl ? `Join your Google Meet: ${booking.meetingUrl}` : 'The clinic team will follow up with your meeting details.',
         '',
         'The clinic team will confirm the timing with you.',
@@ -241,6 +241,17 @@ function getMeetingTimes(booking) {
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
+function getCalendarAddUrl(booking, times, meetingUrl) {
+  const format = (value) => value.replace(/[-:]/g, '').replace(/\.\d{3}Z$/, 'Z');
+  const url = new globalThis.URL('https://calendar.google.com/calendar/render');
+  url.searchParams.set('action', 'TEMPLATE');
+  url.searchParams.set('text', `Antaran Psychiatric Consultation - ${booking.fullName}`);
+  url.searchParams.set('dates', `${format(times.start)}/${format(times.end)}`);
+  url.searchParams.set('details', `Antaran online psychiatric consultation.\n\nGoogle Meet: ${meetingUrl}`);
+  url.searchParams.set('location', meetingUrl);
+  return url.toString();
+}
+
 async function createGoogleMeeting(booking) {
   const accessToken = await getGoogleAccessToken();
   if (!accessToken) return { meetingStatus: 'not_configured' };
@@ -262,7 +273,7 @@ async function createGoogleMeeting(booking) {
   const event = await response.json();
   const meetingUrl = event.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === 'video')?.uri;
   if (!meetingUrl) throw new Error('Google Calendar created an event without a Meet link.');
-  return { meetingStatus: 'created', meetingUrl, calendarEventId: event.id, calendarEventUrl: event.htmlLink || null, meetingStartAt: times.start, meetingEndAt: times.end };
+  return { meetingStatus: 'created', meetingUrl, calendarEventId: event.id, calendarEventUrl: event.htmlLink || null, calendarAddUrl: getCalendarAddUrl(booking, times, meetingUrl), meetingStartAt: times.start, meetingEndAt: times.end };
 }
 
 app.http('me', {
@@ -330,7 +341,7 @@ app.http('bookings', {
       record.notificationStatus = notificationStatus;
       record.updatedAt = new Date().toISOString();
       await bookings.items.upsert(record);
-      return json({ booking: { id: record.id, status: record.status, meetingStatus, meetingUrl: record.meetingUrl || null, calendarEventUrl: record.calendarEventUrl || null, meetingStartAt: record.meetingStartAt || null, notificationStatus }, message: 'Your booking request has been received.' }, 201);
+      return json({ booking: { id: record.id, status: record.status, meetingStatus, meetingUrl: record.meetingUrl || null, calendarAddUrl: record.calendarAddUrl || null, meetingStartAt: record.meetingStartAt || null, notificationStatus }, message: 'Your booking request has been received.' }, 201);
     } catch (error) {
       return handleServerError(context, error);
     }
