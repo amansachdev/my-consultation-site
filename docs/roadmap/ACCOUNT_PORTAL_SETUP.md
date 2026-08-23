@@ -13,6 +13,10 @@ COSMOS_DB_DATABASE=antaran
 RESEND_API_KEY=<resend-api-key>
 BOOKING_NOTIFICATION_TO=antaran.health@gmail.com
 BOOKING_FROM_EMAIL=bookings@antaran.online
+GOOGLE_CALENDAR_CLIENT_ID=<oauth-client-id>
+GOOGLE_CALENDAR_CLIENT_SECRET=<oauth-client-secret>
+GOOGLE_CALENDAR_REFRESH_TOKEN=<calendar-refresh-token>
+GOOGLE_CALENDAR_ID=primary
 ```
 
 Example CLI shape:
@@ -27,7 +31,11 @@ az staticwebapp appsettings set \
     COSMOS_DB_DATABASE="antaran" \
     RESEND_API_KEY="<resend-api-key>" \
     BOOKING_NOTIFICATION_TO="antaran.health@gmail.com" \
-    BOOKING_FROM_EMAIL="bookings@antaran.online"
+    BOOKING_FROM_EMAIL="bookings@antaran.online" \
+    GOOGLE_CALENDAR_CLIENT_ID="<oauth-client-id>" \
+    GOOGLE_CALENDAR_CLIENT_SECRET="<oauth-client-secret>" \
+    GOOGLE_CALENDAR_REFRESH_TOKEN="<calendar-refresh-token>" \
+    GOOGLE_CALENDAR_ID="primary"
 ```
 
 ## Cosmos DB containers
@@ -67,6 +75,8 @@ Never expose the Firebase Admin service-account key in frontend code or GitHub A
 ## Booking notifications
 
 Guest and signed-in patients submit directly to `/api/bookings`. The API saves the request to Cosmos DB before sending a basic notification through Resend. The notification goes to `BOOKING_NOTIFICATION_TO` and does not include the patient's message or assessment data. Verify `antaran.online` in Resend before using `BOOKING_FROM_EMAIL`.
+
+Valid bookings also create a Google Calendar event with a unique Google Meet conference. The Google Calendar account must grant the API offline access through a refresh token. The booking stores the Meet URL and UTC start/end timestamps; the account Join action unlocks 15 minutes before the scheduled start.
 
 ## Production gates
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, LogOut, RefreshCw, UserRound } from 'lucide-react';
+import { ArrowRight, ExternalLink, LogOut, RefreshCw, UserRound } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
@@ -13,6 +13,7 @@ export function AccountPage() {
   const [bookings, setBookings] = useState([]);
   const [assessments, setAssessments] = useState([]);
   const [portalLoading, setPortalLoading] = useState(true);
+  const [now, setNow] = useState(Date.now());
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
@@ -46,6 +47,11 @@ export function AccountPage() {
       cancelled = true;
     };
   }, [isAuthenticated]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
 
   if (status === 'loading') {
     return <AccountShell><LoadingState /></AccountShell>;
@@ -126,7 +132,14 @@ export function AccountPage() {
                   <p className="font-semibold">{booking.consultationType}</p>
                   <p className="mt-1 text-sm text-ink/60">{booking.preferredDate} at {booking.preferredTime}</p>
                 </div>
-                <span className="status-pill">{booking.status}</span>
+                <div className="flex flex-col items-end gap-2">
+                  <span className="status-pill">{booking.status}</span>
+                  {booking.meetingUrl && (isJoinAvailable(booking, now) ? (
+                    <a className="inline-flex items-center gap-1 text-sm font-semibold text-moss" href={booking.meetingUrl} target="_blank" rel="noreferrer">
+                      Join meeting <ExternalLink size={14} />
+                    </a>
+                  ) : <span className="text-xs text-ink/50">Join opens 15 minutes before</span>)}
+                </div>
               </div>
             ))}
           </PortalList>
@@ -147,6 +160,10 @@ export function AccountPage() {
       {(message || error) && <p className={`mt-6 rounded-md p-4 text-sm font-medium ${error ? 'bg-semantic-danger/10 text-semantic-danger' : 'bg-semantic-success/10 text-semantic-success'}`} role="status">{message || error}</p>}
     </AccountShell>
   );
+}
+
+function isJoinAvailable(booking, now) {
+  return booking.meetingStartAt && now >= new Date(booking.meetingStartAt).getTime() - 15 * 60 * 1000;
 }
 
 function AccountShell({ children }) {

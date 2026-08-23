@@ -7,12 +7,18 @@ const DATABASE_NAME = process.env.COSMOS_DB_DATABASE || 'antaran';
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
 const BOOKING_NOTIFICATION_TO = process.env.BOOKING_NOTIFICATION_TO || 'antaran.health@gmail.com';
 const BOOKING_FROM_EMAIL = process.env.BOOKING_FROM_EMAIL || '';
+const GOOGLE_CALENDAR_CLIENT_ID = process.env.GOOGLE_CALENDAR_CLIENT_ID || '';
+const GOOGLE_CALENDAR_CLIENT_SECRET = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || '';
+const GOOGLE_CALENDAR_REFRESH_TOKEN = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN || '';
+const GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
 const ASSESSMENT_CONSENT_VERSION = 'assessment-storage-v1';
 const ACCOUNT_CONSENT_VERSION = 'account-storage-v1';
 const BOOKING_CONSENT_VERSION = 'booking-contact-v1';
 
 let cosmosDatabase;
 let firebaseAuth;
+let googleAccessToken;
+let googleAccessTokenExpiresAt = 0;
 
 function json(body, status = 200) {
   return {
@@ -155,16 +161,9 @@ function scoreAssessment(type, responses) {
 
 async function notifyBooking(booking) {
   if (!RESEND_API_KEY || !BOOKING_FROM_EMAIL) return 'not_configured';
-  const response = await fetch('https://api.resend.com/emails', {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${RESEND_API_KEY}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      from: `Antaran bookings <${BOOKING_FROM_EMAIL}>`,
-      to: [BOOKING_NOTIFICATION_TO],
-      reply_to: 'antaran.health@gmail.com',
+  const messages = [
+    {
+      to: BOOKING_NOTIFICATION_TO,
       subject: `New booking request: ${booking.fullName}`,
       text: [
         'A new booking request was submitted on antaran.online.',
@@ -175,12 +174,93 @@ async function notifyBooking(booking) {
         `Consultation: ${booking.consultationType}`,
         `Preferred date: ${booking.preferredDate}`,
         `Preferred time: ${booking.preferredTime} IST`,
+        `Meeting link: ${booking.meetingUrl || 'Not created yet'}`,
         `Booking ID: ${booking.id}`,
       ].join('\n'),
+    },
+    {
+      to: booking.email,
+      subject: 'Your Antaran consultation request',
+      text: [
+        'Your consultation request has been received by Antaran.',
+        '',
+        `Consultation: ${booking.consultationType}`,
+        `Requested date: ${booking.preferredDate}`,
+        `Requested time: ${booking.preferredTime} IST`,
+        '',
+        booking.meetingUrl ? `Join your Google Meet: ${booking.meetingUrl}` : 'The clinic team will follow up with your meeting details.',
+        '',
+        'The clinic team will confirm the timing with you.',
+      ].join('\n'),
+    },
+  ];
+  const responses = await Promise.all(messages.map((message) => fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      Authorization: `Bearer ${RESEND_API_KEY}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: `Antaran bookings <${BOOKING_FROM_EMAIL}>`,
+      to: [message.to],
+      reply_to: 'antaran.health@gmail.com',
+      subject: message.subject,
+      text: message.text,
+    }),
+  })));
+  if (responses.some((response) => !response.ok)) return responses.every((response) => !response.ok) ? 'failed' : 'partial';
+  return 'sent';
+}
+
+async function getGoogleAccessToken() {
+  if (googleAccessToken && Date.now() < googleAccessTokenExpiresAt) return googleAccessToken;
+  if (!GOOGLE_CALENDAR_CLIENT_ID || !GOOGLE_CALENDAR_CLIENT_SECRET || !GOOGLE_CALENDAR_REFRESH_TOKEN) return null;
+  const response = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id: GOOGLE_CALENDAR_CLIENT_ID,
+      client_secret: GOOGLE_CALENDAR_CLIENT_SECRET,
+      refresh_token: GOOGLE_CALENDAR_REFRESH_TOKEN,
+      grant_type: 'refresh_token',
     }),
   });
-  if (!response.ok) throw new Error(`Resend notification failed with status ${response.status}.`);
-  return 'sent';
+  if (!response.ok) throw new Error(`Google token refresh failed with status ${response.status}.`);
+  const payload = await response.json();
+  googleAccessToken = payload.access_token;
+  googleAccessTokenExpiresAt = Date.now() + Math.max((payload.expires_in || 3600) - 60, 60) * 1000;
+  return googleAccessToken;
+}
+
+function getMeetingTimes(booking) {
+  const start = new Date(`${booking.preferredDate}T${booking.preferredTime}:00+05:30`);
+  if (Number.isNaN(start.getTime())) return null;
+  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  return { start: start.toISOString(), end: end.toISOString() };
+}
+
+async function createGoogleMeeting(booking) {
+  const accessToken = await getGoogleAccessToken();
+  if (!accessToken) return { meetingStatus: 'not_configured' };
+  const times = getMeetingTimes(booking);
+  if (!times) throw new Error('Booking date or time is invalid for Google Calendar.');
+  const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(GOOGLE_CALENDAR_ID)}/events?conferenceDataVersion=1&sendUpdates=all`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      summary: `Antaran Psychiatric Consultation - ${booking.fullName}`,
+      description: 'Antaran online psychiatric consultation.',
+      start: { dateTime: times.start, timeZone: 'Asia/Kolkata' },
+      end: { dateTime: times.end, timeZone: 'Asia/Kolkata' },
+      attendees: [{ email: booking.email }],
+      conferenceData: { createRequest: { requestId: crypto.randomUUID(), conferenceSolutionKey: { type: 'hangoutsMeet' } } },
+    }),
+  });
+  if (!response.ok) throw new Error(`Google Calendar event creation failed with status ${response.status}.`);
+  const event = await response.json();
+  const meetingUrl = event.conferenceData?.entryPoints?.find((entry) => entry.entryPointType === 'video')?.uri;
+  if (!meetingUrl) throw new Error('Google Calendar created an event without a Meet link.');
+  return { meetingStatus: 'created', meetingUrl, calendarEventId: event.id, meetingStartAt: times.start, meetingEndAt: times.end };
 }
 
 app.http('me', {
@@ -233,15 +313,22 @@ app.http('bookings', {
       const booking = validateBooking(body);
       if (!booking) return json({ error: 'Please complete the required booking fields.' }, 400);
       const userId = principal?.userId || 'guest';
-      const record = { id: crypto.randomUUID(), userId, isGuest: !principal, ...booking, status: 'requested', notificationStatus: 'pending', bookingConsentVersion: BOOKING_CONSENT_VERSION, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      const record = { id: crypto.randomUUID(), userId, isGuest: !principal, ...booking, status: 'requested', meetingStatus: 'pending', notificationStatus: 'pending', bookingConsentVersion: BOOKING_CONSENT_VERSION, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       if (principal) await recordConsent(principal.userId, ACCOUNT_CONSENT_VERSION);
       await bookings.items.create(record);
+      let meetingStatus = 'failed';
+      try {
+        const meeting = await createGoogleMeeting(record);
+        meetingStatus = meeting.meetingStatus;
+        if (meetingStatus === 'created') Object.assign(record, meeting);
+      } catch (error) { context.warn(`Booking ${record.id} was saved but meeting creation failed.`); }
       let notificationStatus = 'failed';
       try { notificationStatus = await notifyBooking(record); } catch (error) { context.warn(`Booking ${record.id} was saved but notification failed.`); }
+      record.meetingStatus = meetingStatus;
       record.notificationStatus = notificationStatus;
       record.updatedAt = new Date().toISOString();
       await bookings.items.upsert(record);
-      return json({ booking: { id: record.id, status: record.status, notificationStatus }, message: 'Your booking request has been received.' }, 201);
+      return json({ booking: { id: record.id, status: record.status, meetingStatus, meetingUrl: record.meetingUrl || null, meetingStartAt: record.meetingStartAt || null, notificationStatus }, message: 'Your booking request has been received.' }, 201);
     } catch (error) {
       return handleServerError(context, error);
     }

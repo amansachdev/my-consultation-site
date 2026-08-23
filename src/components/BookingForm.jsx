@@ -17,6 +17,7 @@ export function BookingForm() {
   const [touched, setTouched] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [bookingResult, setBookingResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [bookingConsentGiven, setBookingConsentGiven] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
@@ -63,7 +64,7 @@ export function BookingForm() {
     setSubmitting(true);
     setSubmitError('');
     try {
-      await apiRequest('/bookings', {
+      const response = await apiRequest('/bookings', {
         method: 'POST',
         body: JSON.stringify({
           fullName: data.name,
@@ -85,6 +86,7 @@ export function BookingForm() {
       setTouched({});
       setBookingConsentGiven(false);
       setConsentGiven(false);
+      setBookingResult(response.booking);
       setSubmitted(true);
     } catch (error) {
       setSubmitError(error.message);
@@ -130,6 +132,7 @@ export function BookingForm() {
             <p className="eyebrow">Request received</p>
             <h2 className="font-serif text-3xl font-semibold">We have your request.</h2>
             <p className="leading-7 text-ink/70">The clinic team will review your preferred time and contact you to confirm availability.</p>
+            {bookingResult?.meetingUrl && <a className="btn-primary justify-self-start" href={bookingResult.meetingUrl} target="_blank" rel="noreferrer">Join Google Meet <ArrowRight size={17} /></a>}
             <button type="button" className="btn-secondary justify-self-start" onClick={() => setSubmitted(false)}>Send another request</button>
           </div>
         ) : <form className="booking-form" onSubmit={handleSubmit} noValidate>
