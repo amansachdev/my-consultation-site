@@ -4,6 +4,7 @@ import { AssessmentPage } from './pages/AssessmentPage';
 import { AccountPage } from './pages/AccountPage';
 import { BookPage } from './pages/BookPage';
 import { Analytics } from './components/Analytics';
+import { ClinicianPage } from './pages/ClinicianPage';
 import { HomePage } from './pages/HomePage';
 import { TeamPage } from './pages/TeamPage';
 
@@ -18,6 +19,7 @@ function App() {
           <Route path="/assessment" element={<AssessmentPage />} />
           <Route path="/team" element={<TeamPage />} />
           <Route path="/account" element={<AccountPage />} />
+          <Route path="/clinician/prescriptions" element={<ClinicianPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>

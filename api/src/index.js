@@ -11,6 +11,10 @@ const GOOGLE_CALENDAR_CLIENT_ID = process.env.GOOGLE_CALENDAR_CLIENT_ID || '';
 const GOOGLE_CALENDAR_CLIENT_SECRET = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || '';
 const GOOGLE_CALENDAR_REFRESH_TOKEN = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN || '';
 const GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
+const CLINICIAN_EMAILS = (process.env.CLINICIAN_EMAILS || 'antaran.health@gmail.com')
+  .split(',')
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
 const ASSESSMENT_CONSENT_VERSION = 'assessment-storage-v1';
 const ACCOUNT_CONSENT_VERSION = 'account-storage-v1';
 const BOOKING_CONSENT_VERSION = 'booking-contact-v1';
@@ -60,6 +64,10 @@ async function requirePrincipal(request) {
   const principal = await getPrincipal(request);
   if (!principal) return { response: json({ error: 'Sign-in is required.' }, 401) };
   return { principal };
+}
+
+function isClinician(principal) {
+  return principal && CLINICIAN_EMAILS.includes(principal.userDetails.toLowerCase());
 }
 
 function getDatabase() {
@@ -304,6 +312,18 @@ app.http('profile', {
     } catch (error) {
       return handleServerError(context, error);
     }
+  },
+});
+
+app.http('clinicianAccess', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'clinician/access',
+  handler: async (request) => {
+    const principal = await getPrincipal(request);
+    if (!principal) return json({ error: 'Sign-in is required.' }, 401);
+    if (!isClinician(principal)) return json({ error: 'Clinician access is required.' }, 403);
+    return json({ clinician: { email: principal.userDetails, name: 'Dr. Medha', registrationNumber: 'KMC: 143480' } });
   },
 });
 
