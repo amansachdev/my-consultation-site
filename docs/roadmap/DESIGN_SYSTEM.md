@@ -117,6 +117,6 @@ Based on a `0.25rem` grid: `1` = 4px, `4` = 16px, `8` = 32px, `16` = 64px.
 
 | ID | Question | Owner | Status |
 |----|----------|-------|--------|
-| DS-01 | Confirm final brand color values with logo source files | Admin / Designer | Open |
+| DS-01 | Confirm final brand color values with logo source files | Admin / Designer | ✅ Resolved: use the existing Antaran logo palette |
 | DS-02 | Decide dark-mode support and token variants | Tech / Designer | Open |
 | DS-03 | Define motion/accessibility preferences (reduced motion) | Designer | Open |
