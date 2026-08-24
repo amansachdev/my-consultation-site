@@ -13,6 +13,7 @@
     "deploy": "gh-pages -d dist --nojekyll --no-history"
   },
   "dependencies": {
+    "@react-pdf/renderer": "^4.8.1",
     "@vitejs/plugin-react": "^5.0.0",
     "firebase": "^12.18.0",
     "lucide-react": "^0.468.0",
