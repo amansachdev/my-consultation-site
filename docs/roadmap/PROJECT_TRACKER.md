@@ -26,7 +26,7 @@
 |--------|---------|---------|
 | 🟡 In progress | M0, M1, M2, M3, M4, M6, M8, M12 | Current product and infrastructure work already underway |
 | 🔵 Ready next | None recorded | No module is currently marked ready for immediate pickup |
-| ⚪ Planned | M5, M7, M8, M9, M10, M11, M13 | Remaining MVP work that still needs decisions, sequencing, or implementation |
+| ⚪ Planned | M5, M7, M9, M10, M11, M13 | Remaining MVP work that still needs decisions, sequencing, or implementation |
 | ✅ Done | None recorded | No full MVP module is marked complete yet |
 | ⛔ Blocked | B-02 to B-04 | External business, legal, or clinical input is still required |
 | ⏸️ Deferred | P2-1 to P2-8 | Intentionally outside the current MVP |
@@ -132,6 +132,5 @@
 | 2026-08-23 | Added Mermaid diagrams for current architecture, booking flow, authentication/data access, roadmap dependencies, and booking data shape | Agent |
 | 2026-08-24 | Enabled GA4 and Microsoft Clarity automatically without an analytics prompt, scoped to anonymous public home/team page insights; account, booking, assessment, and clinician routes remain excluded | Agent |
 | 2026-08-24 | Added a clinician-only, download-only prescription PDF generator with local document creation, medicine rows, A4 Antaran letterhead styling, and server-side clinician allowlisting; prescription data is not persisted | Agent |
-| 2026-08-24 | Approved the existing Antaran logo palette as the final brand colour direction; DS-01 resolved | Admin / Designer |
 | 2026-08-24 | Approved the existing Antaran logo palette as the final brand colour direction; DS-01 resolved | Admin / Designer |
 | 2026-08-24 | M8 marked In Progress after merging the clinician-only local prescription PDF generator; broader documentation workflows remain pending | Agent |
