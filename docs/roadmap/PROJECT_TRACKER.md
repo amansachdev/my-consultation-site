@@ -112,4 +112,4 @@
 | 2026-08-22 | Replaced the Google Form booking redirect with direct guest/signed-in Cosmos booking storage and basic Resend notification flow; Resend credentials/domain verification remain required | Agent |
 | 2026-08-23 | Decided that valid booking requests should immediately create a Google Calendar event with a Google Meet link; Join remains hidden/disabled if link creation fails and unlocks 15 minutes before the start time | Admin / Tech |
 | 2026-08-23 | Added Mermaid diagrams for current architecture, booking flow, authentication/data access, roadmap dependencies, and booking data shape | Agent |
-| 2026-08-24 | Limited GA4 and Microsoft Clarity to anonymous public home/team page insights and removed the early-stage analytics prompt; account, booking, assessment, and clinician routes remain excluded | Agent |
+| 2026-08-24 | Enabled GA4 and Microsoft Clarity automatically without an analytics prompt, scoped to anonymous public home/team page insights; account, booking, assessment, and clinician routes remain excluded | Agent |
