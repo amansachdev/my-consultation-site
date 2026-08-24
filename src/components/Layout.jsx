@@ -21,7 +21,8 @@ export function Layout({ children }) {
 }
 
 function Header() {
-  const { isAuthenticated, status, signIn } = useAuth();
+  const { isAuthenticated, status, signIn, user } = useAuth();
+  const isClinician = isAuthenticated && user?.email?.toLowerCase() === doctor.email.toLowerCase();
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-mist/90 backdrop-blur">
@@ -40,6 +41,7 @@ function Header() {
           <NavLink to="/book">Book</NavLink>
           <NavLink to="/assessment">Assessments</NavLink>
           <NavLink to="/team">Know your team</NavLink>
+          {isClinician && <NavLink to="/clinician/prescriptions">Prescriptions</NavLink>}
         </div>
         <div className="flex items-center gap-2">
           {status === 'ready' && (isAuthenticated ? (

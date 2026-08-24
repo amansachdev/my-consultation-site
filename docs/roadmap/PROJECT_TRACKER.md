@@ -112,3 +112,4 @@
 | 2026-08-22 | Replaced the Google Form booking redirect with direct guest/signed-in Cosmos booking storage and basic Resend notification flow; Resend credentials/domain verification remain required | Agent |
 | 2026-08-23 | Decided that valid booking requests should immediately create a Google Calendar event with a Google Meet link; Join remains hidden/disabled if link creation fails and unlocks 15 minutes before the start time | Admin / Tech |
 | 2026-08-23 | Added Mermaid diagrams for current architecture, booking flow, authentication/data access, roadmap dependencies, and booking data shape | Agent |
+| 2026-08-24 | Added a clinician-only, download-only prescription PDF generator with local document creation, medicine rows, A4 Antaran letterhead styling, and server-side clinician allowlisting; prescription data is not persisted | Agent |
