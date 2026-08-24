@@ -91,7 +91,6 @@ export function ClinicianPage() {
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [medicines, setMedicines] = useState([blankMedicine()]);
   const [error, setError] = useState('');
-  const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -105,11 +104,9 @@ export function ClinicianPage() {
   }, [isAuthenticated, status]);
 
   const updateMedicine = (index, field, value) => {
-    setReady(false);
     setMedicines((current) => current.map((medicine, medicineIndex) => medicineIndex === index ? { ...medicine, [field]: value } : medicine));
   };
   const updatePatient = (field, value) => {
-    setReady(false);
     setPatient((current) => ({ ...current, [field]: value }));
   };
   const filename = `antaran-prescription-${patient.name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'patient'}-${date}.pdf`;
@@ -121,10 +118,13 @@ export function ClinicianPage() {
   if (access === 'forbidden') return <ClinicianShell><AccessPanel title="Access restricted" text="This workspace is available only to an authorized clinician account." /></ClinicianShell>;
   if (access === 'error') return <ClinicianShell><AccessPanel title="Could not verify access" text="Please try again after signing in." /></ClinicianShell>;
 
-  const prepareDownload = (event) => {
-    event.preventDefault();
-    setError(isValid ? '' : 'Complete every patient and medicine field before downloading.');
-    setReady(Boolean(isValid));
+  const validateDownload = (event) => {
+    if (!isValid) {
+      event.preventDefault();
+      setError('Complete every patient and medicine field before downloading.');
+      return;
+    }
+    setError('');
   };
 
   return (
@@ -134,21 +134,21 @@ export function ClinicianPage() {
         <h1>Prepare a prescription.</h1>
         <p>Enter the patient and medicine details manually. The document is generated locally and is not saved to Antaran.</p>
       </div>
-      <form className="mx-auto grid max-w-5xl gap-6" onSubmit={prepareDownload}>
+      <div className="mx-auto grid max-w-5xl gap-6">
         <section className="booking-form">
           <h2 className="text-xl font-bold">Patient details</h2>
           <div className="grid gap-4 sm:grid-cols-3">
             <label className="field sm:col-span-2"><span>Full name *</span><input value={patient.name} onChange={(event) => updatePatient('name', event.target.value)} /></label>
             <label className="field"><span>Age *</span><input type="number" min="18" max="120" value={patient.age} onChange={(event) => updatePatient('age', event.target.value)} /></label>
           </div>
-          <label className="field"><span>Prescription date *</span><input type="date" value={date} onChange={(event) => { setDate(event.target.value); setReady(false); }} /></label>
+          <label className="field"><span>Prescription date *</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
         </section>
         <section className="booking-form">
-          <div className="flex items-center justify-between gap-4"><h2 className="text-xl font-bold">Medicines</h2><button type="button" className="btn-secondary min-h-10 px-4 text-sm" onClick={() => { setReady(false); setMedicines((current) => [...current, blankMedicine()]); }}><Plus size={16} /> Add medicine</button></div>
+          <div className="flex items-center justify-between gap-4"><h2 className="text-xl font-bold">Medicines</h2><button type="button" className="btn-secondary min-h-10 px-4 text-sm" onClick={() => setMedicines((current) => [...current, blankMedicine()])}><Plus size={16} /> Add medicine</button></div>
           <div className="grid gap-5">
             {medicines.map((medicine, index) => (
               <div className="grid gap-4 rounded-md border border-line bg-mist p-4" key={`medicine-${index}`}>
-                <div className="flex items-center justify-between"><p className="font-semibold">Medicine {index + 1}</p>{medicines.length > 1 && <button type="button" className="inline-flex min-h-10 min-w-10 items-center justify-center text-semantic-danger" aria-label={`Remove medicine ${index + 1}`} onClick={() => { setReady(false); setMedicines((current) => current.filter((_, medicineIndex) => medicineIndex !== index)); }}><Trash2 size={17} /></button>}</div>
+                <div className="flex items-center justify-between"><p className="font-semibold">Medicine {index + 1}</p>{medicines.length > 1 && <button type="button" className="inline-flex min-h-10 min-w-10 items-center justify-center text-semantic-danger" aria-label={`Remove medicine ${index + 1}`} onClick={() => setMedicines((current) => current.filter((_, medicineIndex) => medicineIndex !== index))}><Trash2 size={17} /></button>}</div>
                 <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {['name', 'strength', 'dose', 'frequency', 'duration', 'instructions'].map((field) => <label className="field" key={field}><span>{field[0].toUpperCase() + field.slice(1)} *</span><input value={medicine[field]} onChange={(event) => updateMedicine(index, field, event.target.value)} /></label>)}
                 </div>
@@ -156,13 +156,11 @@ export function ClinicianPage() {
             ))}
           </div>
           {error && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{error}</p>}
-          {ready ? (
-            <PDFDownloadLink document={pdfDocument} fileName={filename} className="btn-primary justify-center sm:justify-self-start">
-              {({ loading }) => <><FileDown size={17} /> {loading ? 'Preparing PDF...' : 'Download prescription PDF'}</>}
-            </PDFDownloadLink>
-          ) : <button className="btn-primary justify-center sm:justify-self-start" type="submit"><FileDown size={17} /> Prepare PDF download</button>}
+          <PDFDownloadLink document={pdfDocument} fileName={filename} onClick={validateDownload} className="btn-primary justify-center sm:justify-self-start">
+            {({ loading }) => <><FileDown size={17} /> {loading ? 'Preparing PDF...' : 'Download prescription PDF'}</>}
+          </PDFDownloadLink>
         </section>
-      </form>
+      </div>
     </ClinicianShell>
   );
 }
