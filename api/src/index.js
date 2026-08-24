@@ -2,6 +2,7 @@ import { app } from '@azure/functions';
 import { CosmosClient } from '@azure/cosmos';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
 const DATABASE_NAME = process.env.COSMOS_DB_DATABASE || 'antaran';
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
@@ -11,6 +12,11 @@ const GOOGLE_CALENDAR_CLIENT_ID = process.env.GOOGLE_CALENDAR_CLIENT_ID || '';
 const GOOGLE_CALENDAR_CLIENT_SECRET = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || '';
 const GOOGLE_CALENDAR_REFRESH_TOKEN = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN || '';
 const GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
+const PAYMENTS_ENABLED = process.env.PAYMENTS_ENABLED === 'true';
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || '';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
+const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+const RAZORPAY_TEST_AMOUNT_PAISE = 500;
 const CLINICIAN_EMAILS = (process.env.CLINICIAN_EMAILS || 'antaran.health@gmail.com')
   .split(',')
   .map((email) => email.trim().toLowerCase())
@@ -115,6 +121,32 @@ function handleServerError(context, error) {
 
 function cleanText(value, maxLength) {
   return String(value || '').trim().slice(0, maxLength);
+}
+
+function paymentError() {
+  return new Error('Payments are not configured for this environment.');
+}
+
+function verifySignature(payload, signature, secret) {
+  if (!signature || !secret) return false;
+  const expected = createHmac('sha256', secret).update(payload).digest('hex');
+  const expectedBuffer = Buffer.from(expected);
+  const signatureBuffer = Buffer.from(signature);
+  return expectedBuffer.length === signatureBuffer.length && timingSafeEqual(expectedBuffer, signatureBuffer);
+}
+
+async function razorpayRequest(path, body) {
+  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) throw paymentError();
+  const response = await fetch(`https://api.razorpay.com/v1${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64')}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`Razorpay request failed with status ${response.status}.`);
+  return response.json();
 }
 
 function cleanProfile(body) {
@@ -324,6 +356,62 @@ app.http('clinicianAccess', {
     if (!principal) return json({ error: 'Sign-in is required.' }, 401);
     if (!isClinician(principal)) return json({ error: 'Clinician access is required.' }, 403);
     return json({ clinician: { email: principal.userDetails, name: 'Dr. Medha', registrationNumber: 'KMC: 143480' } });
+  },
+});
+
+app.http('paymentConfig', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'payments/config',
+  handler: async () => json({ enabled: PAYMENTS_ENABLED, currency: 'INR', amount: RAZORPAY_TEST_AMOUNT_PAISE }),
+});
+
+app.http('paymentOrder', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'payments/order',
+  handler: async (request, context) => {
+    if (!PAYMENTS_ENABLED) return json({ error: 'Payments are currently disabled.' }, 404);
+    try {
+      const order = await razorpayRequest('/orders', {
+        amount: RAZORPAY_TEST_AMOUNT_PAISE,
+        currency: 'INR',
+        receipt: `antaran-${crypto.randomUUID().replaceAll('-', '').slice(0, 24)}`,
+        notes: { environment: 'test', product: 'consultation' },
+      });
+      return json({ keyId: RAZORPAY_KEY_ID, orderId: order.id, amount: order.amount, currency: order.currency });
+    } catch (error) {
+      return handleServerError(context, error);
+    }
+  },
+});
+
+app.http('paymentVerify', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'payments/verify',
+  handler: async (request) => {
+    if (!PAYMENTS_ENABLED) return json({ error: 'Payments are currently disabled.' }, 404);
+    const body = await request.json();
+    const orderId = cleanText(body.orderId, 80);
+    const paymentId = cleanText(body.paymentId, 80);
+    const signature = cleanText(body.signature, 160);
+    if (!orderId || !paymentId || !verifySignature(`${orderId}|${paymentId}`, signature, RAZORPAY_KEY_SECRET)) return json({ verified: false, error: 'Payment verification failed.' }, 400);
+    return json({ verified: true, orderId, paymentId });
+  },
+});
+
+app.http('paymentWebhook', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'payments/webhook',
+  handler: async (request) => {
+    if (!PAYMENTS_ENABLED) return json({ error: 'Payments are currently disabled.' }, 404);
+    const rawBody = await request.text();
+    const signature = request.headers.get('x-razorpay-signature');
+    if (!verifySignature(rawBody, signature, RAZORPAY_WEBHOOK_SECRET)) return json({ error: 'Webhook verification failed.' }, 401);
+    JSON.parse(rawBody);
+    return json({ received: true });
   },
 });
 
