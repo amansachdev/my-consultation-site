@@ -88,7 +88,7 @@ export function ClinicianPage() {
   return <PrescriptionWorkspace accessPath="/clinician/access" accessLabel="Clinician" />;
 }
 
-export function PrescriptionWorkspace({ accessPath = '/admin-access', accessLabel = 'Admin' }) {
+export function PrescriptionWorkspace({ accessPath = '/workspace-access', accessLabel = 'Admin' }) {
   const { isAuthenticated, signIn, status } = useAuth();
   const [access, setAccess] = useState('checking');
   const [patient, setPatient] = useState({ name: '', age: '' });
