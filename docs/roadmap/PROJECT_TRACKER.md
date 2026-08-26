@@ -115,3 +115,4 @@
 | 2026-08-24 | Enabled GA4 and Microsoft Clarity automatically without an analytics prompt, scoped to anonymous public home/team page insights; account, booking, assessment, and clinician routes remain excluded | Agent |
 | 2026-08-24 | Added a clinician-only, download-only prescription PDF generator with local document creation, medicine rows, A4 Antaran letterhead styling, and server-side clinician allowlisting; prescription data is not persisted | Agent |
 | 2026-08-26 | Added shared admin-managed 30-minute availability, blocked dates, public slot generation, one-booking-per-slot reservations, and an admin workspace containing availability and prescription tabs | Agent |
+| 2026-08-24 | Added dormant Razorpay Test Mode payment scaffolding with a fixed ₹5 server-side order, signature verification, and webhook endpoint; booking UI remains unchanged while `PAYMENTS_ENABLED=false` | Agent |
