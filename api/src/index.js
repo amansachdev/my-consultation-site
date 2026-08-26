@@ -481,10 +481,10 @@ app.http('clinicianAccess', {
   },
 });
 
-app.http('adminAccess', {
+app.http('workspaceAccess', {
   methods: ['GET'],
   authLevel: 'anonymous',
-  route: 'admin-access',
+  route: 'workspace-access',
   handler: async (request) => {
     const principal = await getPrincipal(request);
     if (!principal) return json({ error: 'Sign-in is required.' }, 401);
@@ -493,10 +493,10 @@ app.http('adminAccess', {
   },
 });
 
-app.http('adminAvailability', {
+app.http('workspaceAvailability', {
   methods: ['GET', 'PUT'],
   authLevel: 'anonymous',
-  route: 'admin-availability',
+  route: 'workspace-availability',
   handler: async (request, context) => {
     const principal = await getPrincipal(request);
     if (!principal) return json({ error: 'Sign-in is required.' }, 401);

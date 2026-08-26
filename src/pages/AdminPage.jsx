@@ -37,10 +37,10 @@ export function AdminPage() {
       setLoading(false);
       return;
     }
-    apiRequest('/admin-access')
+    apiRequest('/workspace-access')
       .then(() => {
         setAccess('allowed');
-        return apiRequest('/admin-availability');
+        return apiRequest('/workspace-availability');
       })
       .then((response) => setAvailability({ ...blankAvailability(), ...response.availability, weekly: { ...emptyWeekly(), ...response.availability?.weekly } }))
       .catch((requestError) => setAccess(requestError.status === 403 ? 'forbidden' : 'error'))
@@ -58,7 +58,7 @@ export function AdminPage() {
     setMessage('');
     setError('');
     try {
-      const response = await apiRequest('/admin-availability', { method: 'PUT', body: JSON.stringify(availability) });
+      const response = await apiRequest('/workspace-availability', { method: 'PUT', body: JSON.stringify(availability) });
       setAvailability({ ...availability, ...response.availability });
       setMessage('Availability saved. New booking slots are now based on this schedule.');
     } catch (requestError) {
@@ -80,7 +80,7 @@ export function AdminPage() {
           <TabButton active={tab === 'availability'} onClick={() => setTab('availability')}><CalendarDays size={17} /> Availability</TabButton>
           <TabButton active={tab === 'prescriptions'} onClick={() => setTab('prescriptions')}>Prescriptions</TabButton>
         </div>
-        {tab === 'availability' ? <AvailabilityEditor availability={availability} setAvailability={setAvailability} onSave={save} saving={saving} message={message} error={error} /> : <PrescriptionWorkspace accessPath="/admin-access" accessLabel="Admin" />}
+        {tab === 'availability' ? <AvailabilityEditor availability={availability} setAvailability={setAvailability} onSave={save} saving={saving} message={message} error={error} /> : <PrescriptionWorkspace accessPath="/workspace-access" accessLabel="Admin" />}
       </div>
     </AdminShell>
   );
