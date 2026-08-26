@@ -2,6 +2,7 @@ import { app } from '@azure/functions';
 import { CosmosClient } from '@azure/cosmos';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { createHmac, timingSafeEqual } from 'node:crypto';
 
 const DATABASE_NAME = process.env.COSMOS_DB_DATABASE || 'antaran';
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
@@ -11,6 +12,18 @@ const GOOGLE_CALENDAR_CLIENT_ID = process.env.GOOGLE_CALENDAR_CLIENT_ID || '';
 const GOOGLE_CALENDAR_CLIENT_SECRET = process.env.GOOGLE_CALENDAR_CLIENT_SECRET || '';
 const GOOGLE_CALENDAR_REFRESH_TOKEN = process.env.GOOGLE_CALENDAR_REFRESH_TOKEN || '';
 const GOOGLE_CALENDAR_ID = process.env.GOOGLE_CALENDAR_ID || 'primary';
+const PAYMENTS_ENABLED = process.env.PAYMENTS_ENABLED === 'true';
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || '';
+const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
+const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || '';
+const RAZORPAY_TEST_AMOUNT_PAISE = 500;
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'sachdevaman7@gmail.com,10medha@gmail.com,antaran.health@gmail.com')
+  .split(',')
+  .map((email) => email.trim().toLowerCase())
+  .filter(Boolean);
+const AVAILABILITY_ID = 'default';
+const AVAILABILITY_TIMEZONE = 'Asia/Kolkata';
+const AVAILABILITY_HORIZON_DAYS = 60;
 const CLINICIAN_EMAILS = (process.env.CLINICIAN_EMAILS || 'antaran.health@gmail.com')
   .split(',')
   .map((email) => email.trim().toLowerCase())
@@ -70,6 +83,10 @@ function isClinician(principal) {
   return principal && CLINICIAN_EMAILS.includes(principal.userDetails.toLowerCase());
 }
 
+function isAdmin(principal) {
+  return principal && ADMIN_EMAILS.includes(principal.userDetails.toLowerCase());
+}
+
 function getDatabase() {
   if (cosmosDatabase) return cosmosDatabase;
   const endpoint = process.env.COSMOS_DB_ENDPOINT;
@@ -81,6 +98,117 @@ function getDatabase() {
 
 function container(name) {
   return getDatabase().container(name);
+}
+
+function emptyAvailability() {
+  return {
+    id: AVAILABILITY_ID,
+    timezone: AVAILABILITY_TIMEZONE,
+    durationMinutes: 30,
+    enabled: false,
+    weekly: {
+      monday: [],
+      tuesday: [],
+      wednesday: [],
+      thursday: [],
+      friday: [],
+      saturday: [],
+      sunday: [],
+    },
+    blockedDates: [],
+    blockedSlots: [],
+  };
+}
+
+async function readAvailability() {
+  try {
+    const { resource } = await container('availability').item(AVAILABILITY_ID, AVAILABILITY_ID).read();
+    return resource || emptyAvailability();
+  } catch (error) {
+    if (error.code === 404) return emptyAvailability();
+    throw error;
+  }
+}
+
+function isTime(value) {
+  return typeof value === 'string' && /^([01]\d|2[0-3]):[0-5]\d$/.test(value);
+}
+
+function cleanAvailability(body) {
+  const source = body || {};
+  const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+  const weekly = Object.fromEntries(days.map((day) => {
+    const ranges = Array.isArray(source.weekly?.[day]) ? source.weekly[day].slice(0, 1) : [];
+    const validRanges = ranges.filter((range) => isTime(range?.start) && isTime(range?.end) && range.start < range.end)
+      .map((range) => ({ start: range.start, end: range.end }));
+    return [day, validRanges];
+  }));
+  return {
+    id: AVAILABILITY_ID,
+    timezone: AVAILABILITY_TIMEZONE,
+    durationMinutes: 30,
+    enabled: source.enabled === true,
+    weekly,
+    blockedDates: Array.isArray(source.blockedDates) ? source.blockedDates.filter((date) => /^\d{4}-\d{2}-\d{2}$/.test(date)).slice(0, 366) : [],
+    blockedSlots: Array.isArray(source.blockedSlots) ? source.blockedSlots.filter((slot) => /^\d{4}-\d{2}-\d{2}\|([01]\d|2[0-3]):[0-5]\d$/.test(slot)).slice(0, 1000) : [],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function istDateParts(date = new Date()) {
+  const parts = new Intl.DateTimeFormat('en-CA', {
+    timeZone: AVAILABILITY_TIMEZONE,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    hourCycle: 'h23',
+  }).formatToParts(date);
+  return Object.fromEntries(parts.filter(({ type }) => type !== 'literal').map(({ type, value }) => [type, value]));
+}
+
+function dateFromParts(year, month, day) {
+  return new Date(Date.UTC(Number(year), Number(month) - 1, Number(day)));
+}
+
+function formatDate(date) {
+  return date.toISOString().slice(0, 10);
+}
+
+function getSlotsForDate(availability, date) {
+  if (!availability.enabled || availability.blockedDates.includes(date)) return [];
+  const weekday = new Intl.DateTimeFormat('en-US', { timeZone: AVAILABILITY_TIMEZONE, weekday: 'long' }).format(date).toLowerCase();
+  const ranges = availability.weekly[weekday] || [];
+  const now = istDateParts();
+  const slots = [];
+  for (const range of ranges) {
+    let cursor = range.start;
+    while (cursor < range.end) {
+      const nextMinutes = Number(cursor.slice(0, 2)) * 60 + Number(cursor.slice(3)) + availability.durationMinutes;
+      if (nextMinutes > 24 * 60 || nextMinutes > Number(range.end.slice(0, 2)) * 60 + Number(range.end.slice(3))) break;
+      const slotKey = `${formatDate(date)}|${cursor}`;
+      if (!(date === `${now.year}-${now.month}-${now.day}` && cursor <= `${now.hour}:${now.minute}`) && !availability.blockedSlots.includes(slotKey)) {
+        slots.push({ date: formatDate(date), time: cursor, slotKey });
+      }
+      const hours = String(Math.floor(nextMinutes / 60)).padStart(2, '0');
+      const minutes = String(nextMinutes % 60).padStart(2, '0');
+      cursor = `${hours}:${minutes}`;
+    }
+  }
+  return slots;
+}
+
+async function getAvailableSlots() {
+  const availability = await readAvailability();
+  const slots = [];
+  const today = dateFromParts(istDateParts().year, istDateParts().month, istDateParts().day);
+  for (let offset = 0; offset < AVAILABILITY_HORIZON_DAYS; offset += 1) {
+    const date = new Date(today);
+    date.setUTCDate(today.getUTCDate() + offset);
+    slots.push(...getSlotsForDate(availability, date));
+  }
+  return { availability, slots };
 }
 
 async function readUserItem(name, userId) {
@@ -115,6 +243,32 @@ function handleServerError(context, error) {
 
 function cleanText(value, maxLength) {
   return String(value || '').trim().slice(0, maxLength);
+}
+
+function paymentError() {
+  return new Error('Payments are not configured for this environment.');
+}
+
+function verifySignature(payload, signature, secret) {
+  if (!signature || !secret) return false;
+  const expected = createHmac('sha256', secret).update(payload).digest('hex');
+  const expectedBuffer = Buffer.from(expected);
+  const signatureBuffer = Buffer.from(signature);
+  return expectedBuffer.length === signatureBuffer.length && timingSafeEqual(expectedBuffer, signatureBuffer);
+}
+
+async function razorpayRequest(path, body) {
+  if (!RAZORPAY_KEY_ID || !RAZORPAY_KEY_SECRET) throw paymentError();
+  const response = await fetch(`https://api.razorpay.com/v1${path}`, {
+    method: 'POST',
+    headers: {
+      Authorization: `Basic ${Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString('base64')}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(body),
+  });
+  if (!response.ok) throw new Error(`Razorpay request failed with status ${response.status}.`);
+  return response.json();
 }
 
 function cleanProfile(body) {
@@ -327,6 +481,107 @@ app.http('clinicianAccess', {
   },
 });
 
+app.http('adminAccess', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'admin/access',
+  handler: async (request) => {
+    const principal = await getPrincipal(request);
+    if (!principal) return json({ error: 'Sign-in is required.' }, 401);
+    if (!isAdmin(principal)) return json({ error: 'Admin access is required.' }, 403);
+    return json({ admin: { email: principal.userDetails } });
+  },
+});
+
+app.http('adminAvailability', {
+  methods: ['GET', 'PUT'],
+  authLevel: 'anonymous',
+  route: 'admin/availability',
+  handler: async (request, context) => {
+    const principal = await getPrincipal(request);
+    if (!principal) return json({ error: 'Sign-in is required.' }, 401);
+    if (!isAdmin(principal)) return json({ error: 'Admin access is required.' }, 403);
+    try {
+      if (request.method === 'GET') return json({ availability: await readAvailability() });
+      const availability = cleanAvailability(await request.json());
+      await container('availability').items.upsert(availability);
+      return json({ availability });
+    } catch (error) {
+      return handleServerError(context, error);
+    }
+  },
+});
+
+app.http('publicAvailability', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'availability',
+  handler: async (request, context) => {
+    try {
+      const { availability, slots } = await getAvailableSlots();
+      return json({ enabled: availability.enabled, timezone: availability.timezone, durationMinutes: availability.durationMinutes, slots });
+    } catch (error) {
+      return handleServerError(context, error);
+    }
+  },
+});
+
+app.http('paymentConfig', {
+  methods: ['GET'],
+  authLevel: 'anonymous',
+  route: 'payments/config',
+  handler: async () => json({ enabled: PAYMENTS_ENABLED, currency: 'INR', amount: RAZORPAY_TEST_AMOUNT_PAISE }),
+});
+
+app.http('paymentOrder', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'payments/order',
+  handler: async (request, context) => {
+    if (!PAYMENTS_ENABLED) return json({ error: 'Payments are currently disabled.' }, 404);
+    try {
+      const order = await razorpayRequest('/orders', {
+        amount: RAZORPAY_TEST_AMOUNT_PAISE,
+        currency: 'INR',
+        receipt: `antaran-${crypto.randomUUID().replaceAll('-', '').slice(0, 24)}`,
+        notes: { environment: 'test', product: 'consultation' },
+      });
+      return json({ keyId: RAZORPAY_KEY_ID, orderId: order.id, amount: order.amount, currency: order.currency });
+    } catch (error) {
+      return handleServerError(context, error);
+    }
+  },
+});
+
+app.http('paymentVerify', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'payments/verify',
+  handler: async (request) => {
+    if (!PAYMENTS_ENABLED) return json({ error: 'Payments are currently disabled.' }, 404);
+    const body = await request.json();
+    const orderId = cleanText(body.orderId, 80);
+    const paymentId = cleanText(body.paymentId, 80);
+    const signature = cleanText(body.signature, 160);
+    if (!orderId || !paymentId || !verifySignature(`${orderId}|${paymentId}`, signature, RAZORPAY_KEY_SECRET)) return json({ verified: false, error: 'Payment verification failed.' }, 400);
+    return json({ verified: true, orderId, paymentId });
+  },
+});
+
+app.http('paymentWebhook', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'payments/webhook',
+  handler: async (request) => {
+    if (!PAYMENTS_ENABLED) return json({ error: 'Payments are currently disabled.' }, 404);
+    const rawBody = await request.text();
+    const signature = request.headers.get('x-razorpay-signature');
+    if (!verifySignature(rawBody, signature, RAZORPAY_WEBHOOK_SECRET)) return json({ error: 'Webhook verification failed.' }, 401);
+    JSON.parse(rawBody);
+    return json({ received: true });
+  },
+});
+
 app.http('bookings', {
   methods: ['GET', 'POST'],
   authLevel: 'anonymous',
@@ -345,10 +600,20 @@ app.http('bookings', {
       if (principal && (body.consentGiven !== true || body.consentVersion !== ACCOUNT_CONSENT_VERSION)) return json({ error: 'Account storage consent is required.' }, 400);
       const booking = validateBooking(body);
       if (!booking) return json({ error: 'Please complete the required booking fields.' }, 400);
+      const { availability, slots } = await getAvailableSlots();
+      const slotKey = `${booking.preferredDate}|${booking.preferredTime}`;
+      if (!availability.enabled || !slots.some((slot) => slot.slotKey === slotKey)) return json({ error: 'That time is not currently available. Please choose another slot.' }, 409);
       const userId = principal?.userId || 'guest';
-      const record = { id: crypto.randomUUID(), userId, isGuest: !principal, ...booking, status: 'requested', meetingStatus: 'pending', notificationStatus: 'pending', bookingConsentVersion: BOOKING_CONSENT_VERSION, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
-      if (principal) await recordConsent(principal.userId, ACCOUNT_CONSENT_VERSION);
-      await bookings.items.create(record);
+      const record = { id: crypto.randomUUID(), userId, isGuest: !principal, slotKey, ...booking, status: 'requested', meetingStatus: 'pending', notificationStatus: 'pending', bookingConsentVersion: BOOKING_CONSENT_VERSION, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      try {
+        await container('slotReservations').items.create({ id: slotKey, slotKey, bookingId: record.id, createdAt: record.createdAt });
+        if (principal) await recordConsent(principal.userId, ACCOUNT_CONSENT_VERSION);
+        await bookings.items.create(record);
+      } catch (error) {
+        if (error.code === 409) return json({ error: 'That slot has just been requested by someone else. Please choose another slot.' }, 409);
+        try { await container('slotReservations').item(slotKey, slotKey).delete(); } catch { /* Keep the original booking error. */ }
+        throw error;
+      }
       let meetingStatus = 'failed';
       try {
         const meeting = await createGoogleMeeting(record);

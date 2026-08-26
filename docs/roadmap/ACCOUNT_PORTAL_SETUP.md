@@ -48,6 +48,8 @@ Create these containers in the `antaran` database before enabling persistence:
 | `bookingRequests` | `/userId` | Guest and signed-in booking requests and statuses; guest records use `guest` |
 | `assessments` | `/userId` | Explicitly consented PHQ-9/GAD-7 responses and scores |
 | `consents` | `/userId` | Consent version and timestamp records |
+| `availability` | `/id` | One shared admin-managed recurring schedule and blocked dates |
+| `slotReservations` | `/slotKey` | Atomic one-booking-per-slot reservation records |
 
 Use a serverless Cosmos DB account and an India region for production patient data, subject to the final hosting decision in `Q-TECH-07`.
 
@@ -71,6 +73,8 @@ The API verifies Firebase ID tokens with these Azure Static Web App settings:
 - `FIREBASE_PRIVATE_KEY` (service-account private key; preserve newlines as `\\n` in the setting)
 
 Never expose the Firebase Admin service-account key in frontend code or GitHub Actions logs.
+
+The initial admin allowlist is configured with `ADMIN_EMAILS` and contains `sachdevaman7@gmail.com`, `10medha@gmail.com`, and `antaran.health@gmail.com`. Admins can manage the shared `Asia/Kolkata` schedule and use the prescription workspace. Authorization is checked by the API, not only by the frontend.
 
 ## Booking notifications
 

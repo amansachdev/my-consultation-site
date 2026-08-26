@@ -85,6 +85,10 @@ function PrescriptionDocument({ patient, medicines, date }) {
 }
 
 export function ClinicianPage() {
+  return <PrescriptionWorkspace accessPath="/clinician/access" accessLabel="Clinician" />;
+}
+
+export function PrescriptionWorkspace({ accessPath = '/admin/access', accessLabel = 'Admin' }) {
   const { isAuthenticated, signIn, status } = useAuth();
   const [access, setAccess] = useState('checking');
   const [patient, setPatient] = useState({ name: '', age: '' });
@@ -98,10 +102,10 @@ export function ClinicianPage() {
       setAccess('signed-out');
       return;
     }
-    apiRequest('/clinician/access')
+    apiRequest(accessPath)
       .then(() => setAccess('allowed'))
       .catch((requestError) => setAccess(requestError.status === 403 ? 'forbidden' : 'error'));
-  }, [isAuthenticated, status]);
+  }, [accessPath, isAuthenticated, status]);
 
   const updateMedicine = (index, field, value) => {
     setMedicines((current) => current.map((medicine, medicineIndex) => medicineIndex === index ? { ...medicine, [field]: value } : medicine));
@@ -114,8 +118,8 @@ export function ClinicianPage() {
   const isValid = patient.name.trim() && Number(patient.age) >= 18 && Number(patient.age) <= 120 && date && medicines.every((medicine) => Object.values(medicine).every((value) => value.trim()));
 
   if (status === 'loading' || access === 'checking') return <ClinicianShell><p>Checking clinician access...</p></ClinicianShell>;
-  if (access === 'signed-out') return <ClinicianShell><AccessPanel title="Clinician sign-in required" text="Sign in with the authorized clinician account to use the prescription generator." action={<button type="button" className="btn-primary" onClick={signIn}>Sign in with Google</button>} /></ClinicianShell>;
-  if (access === 'forbidden') return <ClinicianShell><AccessPanel title="Access restricted" text="This workspace is available only to an authorized clinician account." /></ClinicianShell>;
+  if (access === 'signed-out') return <ClinicianShell><AccessPanel title={`${accessLabel} sign-in required`} text="Sign in with an authorized Antaran account to use the prescription generator." action={<button type="button" className="btn-primary" onClick={signIn}>Sign in with Google</button>} /></ClinicianShell>;
+  if (access === 'forbidden') return <ClinicianShell><AccessPanel title="Access restricted" text="This workspace is available only to an authorized Antaran admin account." /></ClinicianShell>;
   if (access === 'error') return <ClinicianShell><AccessPanel title="Could not verify access" text="Please try again after signing in." /></ClinicianShell>;
 
   const validateDownload = (event) => {
@@ -130,7 +134,7 @@ export function ClinicianPage() {
   return (
     <ClinicianShell>
       <div className="section-heading text-left">
-        <p className="eyebrow">Clinician workspace</p>
+        <p className="eyebrow">{accessLabel} workspace</p>
         <h1>Prepare a prescription.</h1>
         <p>Enter the patient and medicine details manually. The document is generated locally and is not saved to Antaran.</p>
       </div>
