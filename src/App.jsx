@@ -5,6 +5,7 @@ import { AccountPage } from './pages/AccountPage';
 import { BookPage } from './pages/BookPage';
 import { Analytics } from './components/Analytics';
 import { ClinicianPage } from './pages/ClinicianPage';
+import { AdminPage } from './pages/AdminPage';
 import { HomePage } from './pages/HomePage';
 import { TeamPage } from './pages/TeamPage';
 
@@ -20,6 +21,7 @@ function App() {
           <Route path="/team" element={<TeamPage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/clinician/prescriptions" element={<ClinicianPage />} />
+          <Route path="/admin" element={<AdminPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>

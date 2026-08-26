@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Mail, MapPin, Phone } from 'lucide-react';
 import { useLocation } from 'react-router-dom';
 import {
@@ -20,11 +20,23 @@ export function BookingForm() {
   const [submitting, setSubmitting] = useState(false);
   const [bookingConsentGiven, setBookingConsentGiven] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
+  const [availability, setAvailability] = useState({ enabled: false, slots: [] });
+  const [availabilityLoading, setAvailabilityLoading] = useState(true);
+  const [selectedDate, setSelectedDate] = useState('');
 
   const todayString = useMemo(() => {
     const now = new Date();
     now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
     return now.toISOString().split('T')[0];
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiRequest('/availability')
+      .then((response) => { if (!cancelled) setAvailability(response); })
+      .catch(() => { if (!cancelled) setAvailability({ enabled: false, slots: [] }); })
+      .finally(() => { if (!cancelled) setAvailabilityLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   const handleSubmit = (event) => {
@@ -85,6 +97,7 @@ export function BookingForm() {
       setTouched({});
       setBookingConsentGiven(false);
       setConsentGiven(false);
+      setSelectedDate('');
       setSubmitted(true);
     } catch (error) {
       setSubmitError(error.message);
@@ -189,27 +202,8 @@ export function BookingForm() {
               onBlur={handleBlur}
               onChange={handleChange}
             />
-            <Field
-              label="Preferred date"
-              name="date"
-              type="date"
-              min={todayString}
-              required
-              error={errors.date}
-              touched={touched.date}
-              onBlur={handleBlur}
-              onChange={handleChange}
-            />
-            <Field
-              label="Preferred time"
-              name="time"
-              type="time"
-              required
-              error={errors.time}
-              touched={touched.time}
-              onBlur={handleBlur}
-              onChange={handleChange}
-            />
+            <SlotSelect label="Preferred date" name="date" valueOptions={[...new Set((availability.slots || []).map((slot) => slot.date))]} formatOption={(date) => new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} disabled={availabilityLoading || !availability.enabled} placeholder={availabilityLoading ? 'Loading dates...' : 'Select an available date'} error={errors.date} touched={touched.date} onBlur={handleBlur} onChange={(event) => { setSelectedDate(event.target.value); handleChange(event); }} />
+            <SlotSelect label="Preferred time" name="time" valueOptions={(availability.slots || []).filter((slot) => slot.date === selectedDate).map((slot) => slot.time)} formatOption={(time) => new Date(`1970-01-01T${time}`).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} disabled={availabilityLoading || !availability.enabled || !selectedDate} placeholder={availabilityLoading ? 'Loading times...' : 'Select a date first'} error={errors.time} touched={touched.time} onBlur={handleBlur} onChange={handleChange} />
           </div>
           <label className="field">
             <span>What would you like help with?</span>
@@ -230,7 +224,8 @@ export function BookingForm() {
             </label>
           )}
           {submitError && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{submitError}</p>}
-          <button className="btn-primary w-full justify-center" type="submit" disabled={submitting}>
+          {!availabilityLoading && !availability.enabled && <p className="rounded-md bg-mist p-3 text-sm text-ink/70">Booking is temporarily unavailable. Please check back soon.</p>}
+          <button className="btn-primary w-full justify-center" type="submit" disabled={submitting || availabilityLoading || !availability.enabled}>
             {submitting ? 'Sending...' : 'Send booking request'}
             <ArrowRight size={18} />
           </button>
@@ -238,6 +233,11 @@ export function BookingForm() {
       </div>
     </section>
   );
+}
+
+function SlotSelect({ label, name, valueOptions, formatOption, placeholder, disabled, error, touched, onBlur, onChange }) {
+  const showError = touched && error;
+  return <label className="field"><span>{label}<span className="text-semantic-danger"> *</span></span><select name={name} disabled={disabled} aria-invalid={showError ? 'true' : 'false'} aria-describedby={showError ? `${name}-error` : undefined} className={showError ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''} onBlur={onBlur} onChange={onChange} defaultValue=""><option value="" disabled>{placeholder}</option>{valueOptions.map((option) => <option key={option} value={option}>{formatOption(option)}</option>)}</select>{showError && <span id={`${name}-error`} className="text-xs font-medium text-semantic-danger">{error}</span>}</label>;
 }
 
 function Field({ label, name, type = 'text', error, touched, ...props }) {

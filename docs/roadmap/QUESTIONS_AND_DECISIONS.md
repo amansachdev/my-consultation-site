@@ -88,6 +88,7 @@
 | D-CLIN-05 | MVP service catalogue is one **Psychiatric Consultation** for adults 18+, with a flexible **30-60 minute** duration | Keeps the initial patient-facing offer clear while allowing the clinician to adapt session length to patient needs. | 2026-08-22 | Clinician / Admin |
 | D-TECH-14 | Save guest and signed-in booking requests directly to Cosmos DB and notify `antaran.health@gmail.com` through Resend | Removes the two-step Google Form flow. Email contains only basic booking details; the patient receives an on-site confirmation. | 2026-08-22 | Tech / Admin |
 | D-TECH-15 | Create the Google Calendar event and Google Meet link **immediately after a valid booking request** | Keeps the bootstrap workflow self-serve. Store a failed meeting-creation status without showing a Join button, and enable Join 15 minutes before the scheduled start. | 2026-08-23 | Admin / Tech |
+| D-TECH-16 | Use one shared `Asia/Kolkata` recurring schedule with 30-minute slots, admin-configurable weekdays/time range, blocked dates, and one booking reservation per slot | Keeps the first availability workflow simple while preventing duplicate requests for the same slot. | 2026-08-26 | Admin / Tech |
 
 ---
 

@@ -17,12 +17,18 @@ export const doctor = {
     'https://www.instagram.com/antaran.health?igsh=MTA4Zjc2am1ibzd4eQ%3D%3D&utm_source=qr',
 };
 
+export const adminEmails = [
+  'sachdevaman7@gmail.com',
+  '10medha@gmail.com',
+  'antaran.health@gmail.com',
+];
+
 export const consultationTypes = [
   {
     title: 'Psychiatric Consultation',
-    duration: '30-60 min',
+    duration: '30 min',
     description:
-      'A private online consultation shaped around your concerns, history, and goals. The duration is tailored to what you need.',
+      'A private online consultation shaped around your concerns, history, and goals.',
   },
 ];
 
