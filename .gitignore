@@ -3,4 +3,5 @@ dist/
 .npm-cache/
 .DS_Store
 *.local
+api/local.settings.json
 *-firebase-adminsdk-*.json
