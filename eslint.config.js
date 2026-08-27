@@ -18,6 +18,7 @@ export default [
         console: 'readonly',
         crypto: 'readonly',
         fetch: 'readonly',
+        localStorage: 'readonly',
         URLSearchParams: 'readonly',
         window: 'readonly',
       },
