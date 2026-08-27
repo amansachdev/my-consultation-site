@@ -154,7 +154,7 @@
   .field input,
   .field select,
   .field textarea {
-    @apply w-full min-w-0 min-h-12 rounded-md border border-line bg-mist px-4 text-base font-normal text-ink outline-none transition focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10;
+    @apply w-full min-w-0 min-h-12 rounded-md border border-line bg-mist px-4 py-2.5 text-base font-normal text-ink outline-none transition box-border focus:border-moss focus:bg-white focus:ring-4 focus:ring-moss/10;
   }
 
   .field textarea {

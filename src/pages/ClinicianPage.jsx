@@ -4,6 +4,7 @@ import { FileDown, Plus, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
 import { brand, doctor } from '../constants';
+import { LoadingState } from '../components/LoadingState';
 
 const blankMedicine = () => ({ name: '', strength: '', dose: '', frequency: '', duration: '', instructions: '' });
 
@@ -88,7 +89,7 @@ export function ClinicianPage() {
   return <PrescriptionWorkspace accessPath="/clinician/access" accessLabel="Clinician" />;
 }
 
-export function PrescriptionWorkspace({ accessPath = '/workspace-access', accessLabel = 'Admin' }) {
+export function PrescriptionWorkspace({ accessPath = '/workspace-access', accessLabel = 'Admin', embedded = false }) {
   const { isAuthenticated, signIn, status } = useAuth();
   const [access, setAccess] = useState('checking');
   const [patient, setPatient] = useState({ name: '', age: '' });
@@ -117,10 +118,22 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
   const pdfDocument = useMemo(() => <PrescriptionDocument patient={patient} medicines={medicines} date={date} />, [date, medicines, patient]);
   const isValid = patient.name.trim() && Number(patient.age) >= 18 && Number(patient.age) <= 120 && date && medicines.every((medicine) => Object.values(medicine).every((value) => value.trim()));
 
-  if (status === 'loading' || access === 'checking') return <ClinicianShell><p>Checking clinician access...</p></ClinicianShell>;
-  if (access === 'signed-out') return <ClinicianShell><AccessPanel title={`${accessLabel} sign-in required`} text="Sign in with an authorized Antaran account to use the prescription generator." action={<button type="button" className="btn-primary" onClick={signIn}>Sign in with Google</button>} /></ClinicianShell>;
-  if (access === 'forbidden') return <ClinicianShell><AccessPanel title="Access restricted" text="This workspace is available only to an authorized Antaran admin account." /></ClinicianShell>;
-  if (access === 'error') return <ClinicianShell><AccessPanel title="Could not verify access" text="Please try again after signing in." /></ClinicianShell>;
+  if (status === 'loading' || access === 'checking') {
+    const loader = <LoadingState text="Checking clinician access..." />;
+    return embedded ? loader : <ClinicianShell>{loader}</ClinicianShell>;
+  }
+  if (access === 'signed-out') {
+    const panel = <AccessPanel title={`${accessLabel} sign-in required`} text="Sign in with an authorized Antaran account to use the prescription generator." action={<button type="button" className="btn-primary" onClick={signIn}>Sign in with Google</button>} />;
+    return embedded ? panel : <ClinicianShell>{panel}</ClinicianShell>;
+  }
+  if (access === 'forbidden') {
+    const panel = <AccessPanel title="Access restricted" text="This workspace is available only to an authorized Antaran admin account." />;
+    return embedded ? panel : <ClinicianShell>{panel}</ClinicianShell>;
+  }
+  if (access === 'error') {
+    const panel = <AccessPanel title="Could not verify access" text="Please try again after signing in." />;
+    return embedded ? panel : <ClinicianShell>{panel}</ClinicianShell>;
+  }
 
   const validateDownload = (event) => {
     if (!isValid) {
@@ -131,6 +144,40 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
     setError('');
   };
 
+  const content = (
+    <div className="mx-auto grid max-w-5xl gap-6">
+      <section className="booking-form">
+        <h2 className="text-xl font-bold">Patient details</h2>
+        <div className="grid gap-4 sm:grid-cols-3">
+          <label className="field sm:col-span-2"><span>Full name *</span><input value={patient.name} onChange={(event) => updatePatient('name', event.target.value)} /></label>
+          <label className="field"><span>Age *</span><input type="number" min="18" max="120" value={patient.age} onChange={(event) => updatePatient('age', event.target.value)} /></label>
+        </div>
+        <label className="field"><span>Prescription date *</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+      </section>
+      <section className="booking-form">
+        <div className="flex items-center justify-between gap-4"><h2 className="text-xl font-bold">Medicines</h2><button type="button" className="btn-secondary min-h-10 px-4 text-sm" onClick={() => setMedicines((current) => [...current, blankMedicine()])}><Plus size={16} /> Add medicine</button></div>
+        <div className="grid gap-5">
+          {medicines.map((medicine, index) => (
+            <div className="grid gap-4 rounded-md border border-line bg-mist p-4" key={`medicine-${index}`}>
+              <div className="flex items-center justify-between"><p className="font-semibold">Medicine {index + 1}</p>{medicines.length > 1 && <button type="button" className="inline-flex min-h-10 min-w-10 items-center justify-center text-semantic-danger" aria-label={`Remove medicine ${index + 1}`} onClick={() => setMedicines((current) => current.filter((_, medicineIndex) => medicineIndex !== index))}><Trash2 size={17} /></button>}</div>
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {['name', 'strength', 'dose', 'frequency', 'duration', 'instructions'].map((field) => <label className="field" key={field}><span>{field[0].toUpperCase() + field.slice(1)} *</span><input value={medicine[field]} onChange={(event) => updateMedicine(index, field, event.target.value)} /></label>)}
+              </div>
+            </div>
+          ))}
+        </div>
+        {error && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{error}</p>}
+        <PDFDownloadLink document={pdfDocument} fileName={filename} onClick={validateDownload} className="btn-primary justify-center sm:justify-self-start">
+          {({ loading }) => <><FileDown size={17} /> {loading ? 'Preparing PDF...' : 'Download prescription PDF'}</>}
+        </PDFDownloadLink>
+      </section>
+    </div>
+  );
+
+  if (embedded) {
+    return content;
+  }
+
   return (
     <ClinicianShell>
       <div className="section-heading text-left">
@@ -138,33 +185,7 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
         <h1>Prepare a prescription.</h1>
         <p>Enter the patient and medicine details manually. The document is generated locally and is not saved to Antaran.</p>
       </div>
-      <div className="mx-auto grid max-w-5xl gap-6">
-        <section className="booking-form">
-          <h2 className="text-xl font-bold">Patient details</h2>
-          <div className="grid gap-4 sm:grid-cols-3">
-            <label className="field sm:col-span-2"><span>Full name *</span><input value={patient.name} onChange={(event) => updatePatient('name', event.target.value)} /></label>
-            <label className="field"><span>Age *</span><input type="number" min="18" max="120" value={patient.age} onChange={(event) => updatePatient('age', event.target.value)} /></label>
-          </div>
-          <label className="field"><span>Prescription date *</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
-        </section>
-        <section className="booking-form">
-          <div className="flex items-center justify-between gap-4"><h2 className="text-xl font-bold">Medicines</h2><button type="button" className="btn-secondary min-h-10 px-4 text-sm" onClick={() => setMedicines((current) => [...current, blankMedicine()])}><Plus size={16} /> Add medicine</button></div>
-          <div className="grid gap-5">
-            {medicines.map((medicine, index) => (
-              <div className="grid gap-4 rounded-md border border-line bg-mist p-4" key={`medicine-${index}`}>
-                <div className="flex items-center justify-between"><p className="font-semibold">Medicine {index + 1}</p>{medicines.length > 1 && <button type="button" className="inline-flex min-h-10 min-w-10 items-center justify-center text-semantic-danger" aria-label={`Remove medicine ${index + 1}`} onClick={() => setMedicines((current) => current.filter((_, medicineIndex) => medicineIndex !== index))}><Trash2 size={17} /></button>}</div>
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                  {['name', 'strength', 'dose', 'frequency', 'duration', 'instructions'].map((field) => <label className="field" key={field}><span>{field[0].toUpperCase() + field.slice(1)} *</span><input value={medicine[field]} onChange={(event) => updateMedicine(index, field, event.target.value)} /></label>)}
-                </div>
-              </div>
-            ))}
-          </div>
-          {error && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{error}</p>}
-          <PDFDownloadLink document={pdfDocument} fileName={filename} onClick={validateDownload} className="btn-primary justify-center sm:justify-self-start">
-            {({ loading }) => <><FileDown size={17} /> {loading ? 'Preparing PDF...' : 'Download prescription PDF'}</>}
-          </PDFDownloadLink>
-        </section>
-      </div>
+      {content}
     </ClinicianShell>
   );
 }

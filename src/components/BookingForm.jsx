@@ -1,17 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Mail, MapPin, Phone } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
-import {
-  consultationTypes,
-  doctor,
-} from '../constants';
+import { consultationTypes, doctor } from '../constants';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
 
+const CONSULTATION_TYPE = consultationTypes[0]?.title || 'Psychiatric Consultation';
+
 export function BookingForm() {
-  const location = useLocation();
   const { isAuthenticated } = useAuth();
-  const preselectedType = location.state?.consultationType || '';
 
   const [errors, setErrors] = useState({});
   const [touched, setTouched] = useState({});
@@ -30,6 +26,19 @@ export function BookingForm() {
     return now.toISOString().split('T')[0];
   }, []);
 
+  const availableDates = useMemo(() => {
+    const dates = [...new Set((availability.slots || []).map((slot) => slot.date))];
+    return dates.sort();
+  }, [availability.slots]);
+
+  const availableTimesForDate = useMemo(() => {
+    if (!selectedDate) return [];
+    return (availability.slots || [])
+      .filter((slot) => slot.date === selectedDate)
+      .map((slot) => slot.time)
+      .sort();
+  }, [availability.slots, selectedDate]);
+
   useEffect(() => {
     let cancelled = false;
     apiRequest('/availability')
@@ -46,14 +55,13 @@ export function BookingForm() {
     const data = Object.fromEntries(formData.entries());
     setSubmitError('');
 
-    const validationErrors = validate(data, todayString);
+    const validationErrors = validate(data, todayString, availability.slots, selectedDate);
     setErrors(validationErrors);
     setTouched({
       name: true,
       age: true,
       phone: true,
       email: true,
-      consultationType: true,
       date: true,
       time: true,
     });
@@ -82,7 +90,7 @@ export function BookingForm() {
           age: data.age ? Number(data.age) : '',
           phone: data.phone,
           email: data.email,
-          consultationType: data.consultationType,
+          consultationType: CONSULTATION_TYPE,
           preferredDate: data.date,
           preferredTime: data.time,
           message: data.message || '',
@@ -109,17 +117,20 @@ export function BookingForm() {
   const handleBlur = (event) => {
     const { name, value } = event.target;
     setTouched((prev) => ({ ...prev, [name]: true }));
-    const fieldErrors = validateField(name, value, todayString);
+    const fieldErrors = validateField(name, value, todayString, availability.slots, selectedDate);
     setErrors((prev) => ({ ...prev, [name]: fieldErrors[name] }));
   };
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     if (touched[name]) {
-      const fieldErrors = validateField(name, value, todayString);
+      const fieldErrors = validateField(name, value, todayString, availability.slots, selectedDate);
       setErrors((prev) => ({ ...prev, [name]: fieldErrors[name] }));
     }
   };
+
+  const dateInputDisabled = availabilityLoading || !availability.enabled || availableDates.length === 0;
+  const timeInputDisabled = dateInputDisabled || !selectedDate || availableTimesForDate.length === 0;
 
   return (
     <section id="booking" className="bg-white">
@@ -148,7 +159,8 @@ export function BookingForm() {
             <button type="button" className="btn-secondary justify-self-start" onClick={() => setSubmitted(false)}>Send another request</button>
           </div>
         ) : <form className="booking-form" onSubmit={handleSubmit} noValidate>
-          <div className="grid gap-4 md:grid-cols-2">
+          <input type="hidden" name="consultationType" value={CONSULTATION_TYPE} />
+          <div className="grid items-start gap-4 md:grid-cols-2">
             <Field
               label="Full name"
               name="name"
@@ -191,19 +203,44 @@ export function BookingForm() {
               onBlur={handleBlur}
               onChange={handleChange}
             />
-            <Select
-              label="Consultation type"
-              name="consultationType"
-              options={consultationTypes.map((item) => item.title)}
-              defaultValue={preselectedType}
-              required
-              error={errors.consultationType}
-              touched={touched.consultationType}
-              onBlur={handleBlur}
-              onChange={handleChange}
-            />
-            <SlotSelect label="Preferred date" name="date" valueOptions={[...new Set((availability.slots || []).map((slot) => slot.date))]} formatOption={(date) => new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })} disabled={availabilityLoading || !availability.enabled} placeholder={availabilityLoading ? 'Loading dates...' : 'Select an available date'} error={errors.date} touched={touched.date} onBlur={handleBlur} onChange={(event) => { setSelectedDate(event.target.value); handleChange(event); }} />
-            <SlotSelect label="Preferred time" name="time" valueOptions={(availability.slots || []).filter((slot) => slot.date === selectedDate).map((slot) => slot.time)} formatOption={(time) => new Date(`1970-01-01T${time}`).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' })} disabled={availabilityLoading || !availability.enabled || !selectedDate} placeholder={availabilityLoading ? 'Loading times...' : 'Select a date first'} error={errors.time} touched={touched.time} onBlur={handleBlur} onChange={handleChange} />
+            <label className="field">
+              <span>Preferred date<span className="text-semantic-danger"> *</span></span>
+              <input
+                type="date"
+                name="date"
+                min={todayString}
+                max={availableDates[availableDates.length - 1] || ''}
+                disabled={dateInputDisabled}
+                aria-invalid={touched.date && errors.date ? 'true' : 'false'}
+                aria-describedby={touched.date && errors.date ? 'date-error' : undefined}
+                className={touched.date && errors.date ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}
+                onBlur={handleBlur}
+                onChange={(event) => { setSelectedDate(event.target.value); handleChange(event); }}
+              />
+              {touched.date && errors.date && (
+                <span id="date-error" className="text-xs font-medium text-semantic-danger">{errors.date}</span>
+              )}
+            </label>
+            <label className="field">
+              <span>Preferred time<span className="text-semantic-danger"> *</span></span>
+              <input
+                key={selectedDate}
+                type="time"
+                name="time"
+                disabled={timeInputDisabled}
+                min={availableTimesForDate[0] || ''}
+                max={availableTimesForDate[availableTimesForDate.length - 1] || ''}
+                step="1800"
+                aria-invalid={touched.time && errors.time ? 'true' : 'false'}
+                aria-describedby={touched.time && errors.time ? 'time-error' : undefined}
+                className={touched.time && errors.time ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}
+                onBlur={handleBlur}
+                onChange={handleChange}
+              />
+              {touched.time && errors.time && (
+                <span id="time-error" className="text-xs font-medium text-semantic-danger">{errors.time}</span>
+              )}
+            </label>
           </div>
           <label className="field">
             <span>What would you like help with?</span>
@@ -235,11 +272,6 @@ export function BookingForm() {
   );
 }
 
-function SlotSelect({ label, name, valueOptions, formatOption, placeholder, disabled, error, touched, onBlur, onChange }) {
-  const showError = touched && error;
-  return <label className="field"><span>{label}<span className="text-semantic-danger"> *</span></span><select name={name} disabled={disabled} aria-invalid={showError ? 'true' : 'false'} aria-describedby={showError ? `${name}-error` : undefined} className={showError ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''} onBlur={onBlur} onChange={onChange} defaultValue=""><option value="" disabled>{placeholder}</option>{valueOptions.map((option) => <option key={option} value={option}>{formatOption(option)}</option>)}</select>{showError && <span id={`${name}-error`} className="text-xs font-medium text-semantic-danger">{error}</span>}</label>;
-}
-
 function Field({ label, name, type = 'text', error, touched, ...props }) {
   const showError = touched && error;
   return (
@@ -265,41 +297,6 @@ function Field({ label, name, type = 'text', error, touched, ...props }) {
   );
 }
 
-function Select({ label, name, options, defaultValue = '', required, error, touched, onBlur, onChange }) {
-  const showError = touched && error;
-  return (
-    <label className="field">
-      <span>
-        {label}
-        {required && <span className="text-semantic-danger"> *</span>}
-      </span>
-      <select
-        name={name}
-        defaultValue={defaultValue}
-        aria-invalid={showError ? 'true' : 'false'}
-        aria-describedby={showError ? `${name}-error` : undefined}
-        className={showError ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}
-        onBlur={onBlur}
-        onChange={onChange}
-      >
-        <option value="" disabled>
-          Select a consultation type
-        </option>
-        {options.map((option) => (
-          <option key={option} value={option}>
-            {option}
-          </option>
-        ))}
-      </select>
-      {showError && (
-        <span id={`${name}-error`} className="text-xs font-medium text-semantic-danger">
-          {error}
-        </span>
-      )}
-    </label>
-  );
-}
-
 function ContactRow({ icon: Icon, label, value }) {
   return (
     <div className="flex items-center gap-3">
@@ -310,16 +307,16 @@ function ContactRow({ icon: Icon, label, value }) {
   );
 }
 
-function validate(data, todayString) {
+function validate(data, todayString, slots, selectedDate) {
   const errors = {};
   Object.entries(data).forEach(([name, value]) => {
-    const fieldErrors = validateField(name, value, todayString);
+    const fieldErrors = validateField(name, value, todayString, slots, selectedDate);
     if (fieldErrors[name]) errors[name] = fieldErrors[name];
   });
   return errors;
 }
 
-function validateField(name, value, todayString) {
+function validateField(name, value, todayString, slots, selectedDate) {
   const errors = {};
 
   if (name === 'name') {
@@ -328,7 +325,7 @@ function validateField(name, value, todayString) {
       errors[name] = 'Please enter your full name.';
     } else if (trimmed.length < 2) {
       errors[name] = 'Name must be at least 2 characters.';
-    } else if (!/^[\p{L}\s.'-]+$/u.test(trimmed)) {
+    } else if (!/[\p{L}\s.'-]+/u.test(trimmed)) {
       errors[name] = 'Please use only letters, spaces, and common name characters.';
     }
   }
@@ -365,23 +362,29 @@ function validateField(name, value, todayString) {
     }
   }
 
-  if (name === 'consultationType') {
-    if (!value) {
-      errors[name] = 'Please select a consultation type.';
-    }
-  }
-
   if (name === 'date') {
     if (!value) {
       errors[name] = 'Please select a preferred date.';
     } else if (value < todayString) {
       errors[name] = 'Please choose today or a future date.';
+    } else {
+      const availableDates = [...new Set((slots || []).map((slot) => slot.date))];
+      if (!availableDates.includes(value)) {
+        errors[name] = 'Please select an available date.';
+      }
     }
   }
 
   if (name === 'time') {
     if (!value) {
       errors[name] = 'Please select a preferred time.';
+    } else {
+      const availableTimes = selectedDate
+        ? (slots || []).filter((slot) => slot.date === selectedDate).map((slot) => slot.time)
+        : [];
+      if (availableTimes.length > 0 && !availableTimes.includes(value)) {
+        errors[name] = 'Please select an available time slot.';
+      }
     }
   }
 
