@@ -9,11 +9,13 @@ import {
 import { Link, useLocation } from 'react-router-dom';
 import { adminEmails, brand, doctor } from '../constants';
 import { useAuth } from '../context/useAuth';
+import { isMockMode } from '../lib/dev-auth';
 
 export function Layout({ children }) {
   return (
     <div className="min-h-screen bg-mist text-ink">
       <Header />
+      {isMockMode() && <DevAuthToolbar />}
       <main>{children}</main>
       <Footer />
     </div>
@@ -57,6 +59,34 @@ function Header() {
         </div>
       </nav>
     </header>
+  );
+}
+
+function DevAuthToolbar() {
+  const { isAuthenticated, user, isMockUser, devSignIn, devSignOut, status } = useAuth();
+  if (status !== 'ready') return null;
+  return (
+    <div className="border-b border-semantic-info/20 bg-semantic-info/10 px-5 py-2 text-sm">
+      <div className="mx-auto flex max-w-7xl flex-wrap items-center gap-3">
+        <span className="font-semibold text-semantic-info">Mock mode</span>
+        {isAuthenticated ? (
+          <>
+            <span className="text-ink/80">
+              Signed in as <strong>{user?.email}</strong>
+              {isMockUser && ' (mock)'}
+            </span>
+            <button type="button" onClick={devSignOut} className="btn-secondary min-h-8 px-3 text-xs">Sign out</button>
+          </>
+        ) : (
+          <>
+            <span className="text-ink/70">Sign in as:</span>
+            <button type="button" onClick={() => devSignIn(adminEmails[0])} className="btn-secondary min-h-8 px-3 text-xs">Admin</button>
+            <button type="button" onClick={() => devSignIn(doctor.email)} className="btn-secondary min-h-8 px-3 text-xs">Clinician</button>
+            <button type="button" onClick={() => devSignIn('patient@example.com')} className="btn-secondary min-h-8 px-3 text-xs">Patient</button>
+          </>
+        )}
+      </div>
+    </div>
   );
 }
 

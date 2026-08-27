@@ -1,8 +1,15 @@
 const API_BASE = '/api';
 import { firebaseAuth } from './firebase';
+import { getMockToken } from './dev-auth';
 
 export async function apiRequest(path, options = {}) {
-  const token = firebaseAuth?.currentUser ? await firebaseAuth.currentUser.getIdToken() : null;
+  let token = null;
+  if (firebaseAuth?.currentUser) {
+    token = await firebaseAuth.currentUser.getIdToken();
+  }
+  if (!token) {
+    token = getMockToken();
+  }
   const response = await fetch(`${API_BASE}${path}`, {
     credentials: 'include',
     headers: {

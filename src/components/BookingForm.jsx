@@ -368,9 +368,13 @@ function validateField(name, value, todayString, slots, selectedDate) {
     } else if (value < todayString) {
       errors[name] = 'Please choose today or a future date.';
     } else {
-      const availableDates = [...new Set((slots || []).map((slot) => slot.date))];
-      if (!availableDates.includes(value)) {
-        errors[name] = 'Please select an available date.';
+      const availableDates = [...new Set((slots || []).map((slot) => slot.date))].sort();
+      if (availableDates.length === 0) {
+        errors[name] = 'Booking is currently unavailable.';
+      } else if (!availableDates.includes(value)) {
+        const first = formatDate(availableDates[0]);
+        const last = formatDate(availableDates[availableDates.length - 1]);
+        errors[name] = `Please select a date between ${first} and ${last}.`;
       }
     }
   }
@@ -380,13 +384,26 @@ function validateField(name, value, todayString, slots, selectedDate) {
       errors[name] = 'Please select a preferred time.';
     } else {
       const availableTimes = selectedDate
-        ? (slots || []).filter((slot) => slot.date === selectedDate).map((slot) => slot.time)
+        ? (slots || []).filter((slot) => slot.date === selectedDate).map((slot) => slot.time).sort()
         : [];
-      if (availableTimes.length > 0 && !availableTimes.includes(value)) {
-        errors[name] = 'Please select an available time slot.';
+      if (availableTimes.length === 0) {
+        errors[name] = 'No time slots are available for this date.';
+      } else if (!availableTimes.includes(value)) {
+        const first = formatTime(availableTimes[0]);
+        const last = formatTime(availableTimes[availableTimes.length - 1]);
+        const examples = availableTimes.slice(0, 3).map(formatTime).join(', ');
+        errors[name] = `Please choose a slot between ${first} and ${last} (e.g. ${examples}).`;
       }
     }
   }
 
   return errors;
+}
+
+function formatDate(date) {
+  return new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { month: 'short', day: 'numeric' });
+}
+
+function formatTime(time) {
+  return new Date(`1970-01-01T${time}`).toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
