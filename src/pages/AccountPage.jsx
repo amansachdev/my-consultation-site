@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, ExternalLink, LogOut, UserRound } from 'lucide-react';
+import { ArrowRight, ExternalLink, LogOut, RefreshCw, UserRound } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
