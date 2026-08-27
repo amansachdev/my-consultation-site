@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
-import { ArrowRight, ExternalLink, LogOut, RefreshCw, UserRound } from 'lucide-react';
+import { ArrowRight, ExternalLink, LogOut, UserRound } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
+import { LoadingState } from '../components/LoadingState';
 
 const EMPTY_PROFILE = { fullName: '', age: '', city: '', state: '', phone: '' };
 
@@ -180,8 +181,4 @@ function AccountField({ label, type = 'text', value, onChange, ...props }) {
 function PortalList({ title, empty, action, children, loading }) {
   const hasItems = Array.isArray(children) ? children.length > 0 : Boolean(children);
   return <section className="account-panel"><div className="flex items-center justify-between gap-4"><h2 className="text-xl font-bold">{title}</h2>{action}</div><div className="mt-5 grid gap-3">{loading ? <p className="flex items-center gap-2 rounded-md bg-mist p-4 text-sm text-ink/60"><RefreshCw className="animate-spin" size={16} /> Loading...</p> : hasItems ? children : <p className="rounded-md bg-mist p-4 text-sm text-ink/60">{empty}</p>}</div></section>;
-}
-
-function LoadingState() {
-  return <div className="flex min-h-[50vh] items-center justify-center gap-3 text-sm font-medium text-ink/60"><RefreshCw className="animate-spin" size={18} /> Loading your account...</div>;
 }
