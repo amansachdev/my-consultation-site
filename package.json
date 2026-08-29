@@ -50,6 +50,8 @@
     "msw-storybook-addon": "^2.0.4",
     "playwright": "latest",
     "postcss": "^8.4.49",
+    "postcss-preset-mantine": "^1.18.0",
+    "postcss-simple-vars": "^7.0.1",
     "prop-types": "latest",
     "storybook": "^10.5.10",
     "tailwindcss": "^3.4.17",
