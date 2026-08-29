@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Mail, MapPin, Phone } from 'lucide-react';
+import { MantineTimePicker } from './MantineTimePicker';
 import { consultationTypes, doctor } from '../constants';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
@@ -19,6 +20,7 @@ export function BookingForm() {
   const [availability, setAvailability] = useState({ enabled: false, slots: [] });
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
 
   const todayString = useMemo(() => {
     const now = new Date();
@@ -106,6 +108,7 @@ export function BookingForm() {
       setBookingConsentGiven(false);
       setConsentGiven(false);
       setSelectedDate('');
+      setSelectedTime('');
       setSubmitted(true);
     } catch (error) {
       setSubmitError(error.message);
@@ -215,32 +218,40 @@ export function BookingForm() {
                 aria-describedby={touched.date && errors.date ? 'date-error' : undefined}
                 className={touched.date && errors.date ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}
                 onBlur={handleBlur}
-                onChange={(event) => { setSelectedDate(event.target.value); handleChange(event); }}
+                onChange={(event) => { setSelectedDate(event.target.value); setSelectedTime(''); handleChange(event); }}
               />
               {touched.date && errors.date && (
                 <span id="date-error" className="text-xs font-medium text-semantic-danger">{errors.date}</span>
               )}
             </label>
-            <label className="field">
+            <div className="field">
               <span>Preferred time<span className="text-semantic-danger"> *</span></span>
-              <input
+              <MantineTimePicker
                 key={selectedDate}
-                type="time"
-                name="time"
+                value={selectedTime}
+                onChange={(value) => {
+                  setSelectedTime(value);
+                  if (touched.time) {
+                    const fieldErrors = validateField('time', value, todayString, availability.slots, selectedDate);
+                    setErrors((prev) => ({ ...prev, time: fieldErrors.time }));
+                  }
+                }}
+                onBlur={() => {
+                  setTouched((prev) => ({ ...prev, time: true }));
+                  const fieldErrors = validateField('time', selectedTime, todayString, availability.slots, selectedDate);
+                  setErrors((prev) => ({ ...prev, time: fieldErrors.time }));
+                }}
                 disabled={timeInputDisabled}
-                min={availableTimesForDate[0] || ''}
-                max={availableTimesForDate[availableTimesForDate.length - 1] || ''}
-                step="1800"
-                aria-invalid={touched.time && errors.time ? 'true' : 'false'}
-                aria-describedby={touched.time && errors.time ? 'time-error' : undefined}
-                className={touched.time && errors.time ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}
-                onBlur={handleBlur}
-                onChange={handleChange}
+                withDropdown
+                closeDropdownOnPresetSelect
+                presets={availableTimesForDate}
+                min={availableTimesForDate[0] || undefined}
+                max={availableTimesForDate[availableTimesForDate.length - 1] || undefined}
+                minutesStep={30}
+                error={touched.time && errors.time ? errors.time : null}
               />
-              {touched.time && errors.time && (
-                <span id="time-error" className="text-xs font-medium text-semantic-danger">{errors.time}</span>
-              )}
-            </label>
+              <input type="hidden" name="time" value={selectedTime} />
+            </div>
           </div>
           <label className="field">
             <span>What would you like help with?</span>

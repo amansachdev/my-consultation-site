@@ -14,8 +14,12 @@
     "deploy": "gh-pages -d dist --nojekyll --no-history"
   },
   "dependencies": {
+    "@mantine/core": "^9.5.2",
+    "@mantine/dates": "^9.5.2",
+    "@mantine/hooks": "^9.5.2",
     "@react-pdf/renderer": "^4.8.1",
     "@vitejs/plugin-react": "^5.0.0",
+    "dayjs": "^1.11.23",
     "firebase": "^12.18.0",
     "lucide-react": "^0.468.0",
     "react": "^19.1.0",
