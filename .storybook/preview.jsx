@@ -1,5 +1,9 @@
 import '../src/styles.css';
+import '@mantine/core/styles.css';
+import '@mantine/dates/styles.css';
+import { MantineProvider } from '@mantine/core';
 import { AuthProvider } from '../src/context/AuthContext';
+import { mantineTheme } from '../src/lib/mantine-theme';
 
 const workerReady = (async () => {
   if (import.meta.env.VITE_ENABLE_MSW !== 'true') return;
@@ -10,9 +14,11 @@ const workerReady = (async () => {
 const preview = {
   decorators: [
     (Story) => (
-      <AuthProvider>
-        <Story />
-      </AuthProvider>
+      <MantineProvider theme={mantineTheme}>
+        <AuthProvider>
+          <Story />
+        </AuthProvider>
+      </MantineProvider>
     ),
   ],
   loaders: [
