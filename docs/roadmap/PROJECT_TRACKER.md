@@ -119,4 +119,6 @@
 | 2026-08-27 | Polished booking form alignment, replaced date/time dropdowns with native calendar/time inputs, hid the single consultation type, improved admin/clinician loading states, removed duplicate admin header, and redesigned availability editor with day chips and a shared daily time range | Agent |
 | 2026-08-29 | Fixed Mantine booking time selection validation, removed stale blur behavior, corrected nested picker styling, and added pointer affordances to date/time controls | Agent |
 | 2026-08-29 | Enforced required patient age and email validation consistently in the booking UI, local mock API, and Azure Function API | Agent |
+| 2026-08-29 | Added a balanced assessment card beside the consultation card so the consultations section offers both care paths without an empty panel | Agent |
+| 2026-08-29 | Fixed mock-mode auth switching so sign-out clears an active Firebase session and Admin, Clinician, and Patient test identities can be selected reliably | Agent |
 | 2026-08-24 | Added dormant Razorpay Test Mode payment scaffolding with a fixed ₹5 server-side order, signature verification, and webhook endpoint; booking UI remains unchanged while `PAYMENTS_ENABLED=false` | Agent |

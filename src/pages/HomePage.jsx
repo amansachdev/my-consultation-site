@@ -2,6 +2,7 @@ import {
   ArrowRight,
   CalendarCheck,
   CheckCircle2,
+  ClipboardCheck,
   Clock3,
   HeartHandshake,
   LockKeyhole,
@@ -187,6 +188,19 @@ function Consultations() {
             </Link>
           </article>
         ))}
+        <article className="service-card">
+          <ClipboardCheck size={24} className="text-clay" aria-hidden="true" />
+          <p className="mt-5 text-sm font-semibold text-clay">A guided self-check</p>
+          <h3>Understand how you have been feeling.</h3>
+          <p>
+            Complete a short, confidential assessment to reflect on your recent
+            mood and anxiety symptoms before deciding on your next step.
+          </p>
+          <Link to="/assessment">
+            Take an assessment
+            <ArrowRight size={16} />
+          </Link>
+        </article>
       </div>
     </section>
   );
