@@ -5,3 +5,6 @@ dist/
 *.local
 api/local.settings.json
 *-firebase-adminsdk-*.json
+
+*storybook.log
+storybook-static

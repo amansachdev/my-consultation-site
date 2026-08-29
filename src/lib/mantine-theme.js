@@ -27,9 +27,8 @@ export const mantineTheme = createTheme({
           borderRadius: '0.375rem',
           minHeight: '3rem',
           fontSize: '1rem',
-          transition: 'border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease',
+          transition: 'border-color 160ms ease, box-shadow 160ms ease',
           '&:focus, &:focus-within': {
-            backgroundColor: '#ffffff',
             borderColor: '#6b8a75',
             boxShadow: '0 0 0 4px rgba(107, 138, 117, 0.15)',
           },
@@ -44,10 +43,18 @@ export const mantineTheme = createTheme({
           borderRadius: '0.375rem',
           minHeight: '3rem',
         },
-        timeInput: {
+        fieldsGroup: {
           backgroundColor: 'transparent',
+        },
+        field: {
+          backgroundColor: '#f6f7f3',
+          color: '#20201d',
           border: 'none',
           textAlign: 'center',
+          '&:focus': {
+            backgroundColor: '#f6f7f3',
+            color: '#20201d',
+          },
         },
       }),
     },

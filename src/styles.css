@@ -181,4 +181,32 @@
   .faq-table td {
     @apply text-ink/80;
   }
+
+  /* Mantine TimePicker should match Antaran field styling */
+  .mantine-TimePicker-root .mantine-Input-section,
+  .mantine-TimePicker-root .mantine-Input-section:empty {
+    display: none !important;
+  }
+
+  .mantine-TimePicker-fieldsGroup {
+    background-color: transparent !important;
+    border: none !important;
+  }
+
+  .mantine-TimePicker-fieldsGroup span {
+    background-color: transparent !important;
+    border: none !important;
+  }
+
+  .mantine-TimePicker-field input {
+    background-color: #f6f7f3 !important;
+    color: #20201d !important;
+    border: none !important;
+    box-shadow: none !important;
+  }
+
+  .mantine-TimePicker-field input::selection {
+    background-color: #6b8a75;
+    color: #ffffff;
+  }
 }
