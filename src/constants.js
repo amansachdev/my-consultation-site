@@ -7,8 +7,8 @@ export const brand = {
 };
 
 export const doctor = {
-  name: 'Dr Medha',
-  qualification: 'Consultant Psychiatrist',
+  name: 'Dr. Medha',
+  qualification: 'MBBS, MD Psychiatry',
   city: 'Bengaluru / Online',
   phone: '+91 80888 92105',
   whatsapp: '+91 80888 92105',
