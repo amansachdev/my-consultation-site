@@ -293,7 +293,7 @@ function validateBooking(body) {
     preferredTime: cleanText(body.preferredTime, 20),
     message: cleanText(body.message, 1000),
   };
-  const error = !booking.fullName || !Number.isInteger(booking.age) || booking.age < 18 || booking.age > 120 || !booking.phone || !booking.consultationType || !booking.preferredDate || !booking.preferredTime;
+  const error = !booking.fullName || !Number.isInteger(booking.age) || booking.age < 18 || booking.age > 120 || !booking.phone || !booking.email || !booking.consultationType || !booking.preferredDate || !booking.preferredTime;
   return error ? null : booking;
 }
 

@@ -246,6 +246,8 @@ export function BookingForm() {
                 }}
                 disabled={timeInputDisabled}
                 withDropdown
+                format="12h"
+                amPmInputLabel="AM or PM"
                 closeDropdownOnPresetSelect
                 presets={availableTimesForDate}
                 min={availableTimesForDate[0] || undefined}
@@ -378,8 +380,10 @@ function validateField(name, value, todayString, slots, selectedDate) {
 
   if (name === 'age') {
     const age = value ? Number(value) : NaN;
-    if (value && (Number.isNaN(age) || age < 1 || age > 120 || !Number.isInteger(age))) {
-      errors[name] = 'Please enter a valid age between 1 and 120.';
+    if (!value) {
+      errors[name] = 'Please enter your age.';
+    } else if (Number.isNaN(age) || age < 18 || age > 120 || !Number.isInteger(age)) {
+      errors[name] = 'Please enter a valid age between 18 and 120.';
     }
   }
 
@@ -403,7 +407,9 @@ function validateField(name, value, todayString, slots, selectedDate) {
 
   if (name === 'email') {
     const trimmed = String(value || '').trim();
-    if (trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    if (!trimmed) {
+      errors[name] = 'Please enter your email address.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       errors[name] = 'Please enter a valid email address.';
     }
   }
