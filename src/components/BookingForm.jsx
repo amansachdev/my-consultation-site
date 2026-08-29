@@ -223,20 +223,26 @@ export function BookingForm() {
             </label>
             <label className="field">
               <span>Preferred time<span className="text-semantic-danger"> *</span></span>
-              <input
+              <select
                 key={selectedDate}
-                type="time"
                 name="time"
                 disabled={timeInputDisabled}
-                min={availableTimesForDate[0] || ''}
-                max={availableTimesForDate[availableTimesForDate.length - 1] || ''}
-                step="1800"
+                defaultValue=""
                 aria-invalid={touched.time && errors.time ? 'true' : 'false'}
                 aria-describedby={touched.time && errors.time ? 'time-error' : undefined}
                 className={touched.time && errors.time ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}
                 onBlur={handleBlur}
                 onChange={handleChange}
-              />
+              >
+                <option value="" disabled>
+                  {timeInputDisabled ? 'Select a date first' : 'Select a time'}
+                </option>
+                {availableTimesForDate.map((time) => (
+                  <option key={time} value={time}>
+                    {formatTime(time)}
+                  </option>
+                ))}
+              </select>
               {touched.time && errors.time && (
                 <span id="time-error" className="text-xs font-medium text-semantic-danger">{errors.time}</span>
               )}
