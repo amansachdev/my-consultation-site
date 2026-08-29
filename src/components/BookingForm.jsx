@@ -216,9 +216,14 @@ export function BookingForm() {
                 disabled={dateInputDisabled}
                 aria-invalid={touched.date && errors.date ? 'true' : 'false'}
                 aria-describedby={touched.date && errors.date ? 'date-error' : undefined}
-                className={touched.date && errors.date ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}
+                className={`cursor-pointer ${touched.date && errors.date ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}`}
                 onBlur={handleBlur}
-                onChange={(event) => { setSelectedDate(event.target.value); setSelectedTime(''); handleChange(event); }}
+                onChange={(event) => {
+                  setSelectedDate(event.target.value);
+                  setSelectedTime('');
+                  setErrors((prev) => ({ ...prev, time: undefined }));
+                  handleChange(event);
+                }}
               />
               {touched.date && errors.date && (
                 <span id="date-error" className="text-xs font-medium text-semantic-danger">{errors.date}</span>
@@ -231,10 +236,8 @@ export function BookingForm() {
                 value={selectedTime}
                 onChange={(value) => {
                   setSelectedTime(value);
-                  if (touched.time) {
-                    const fieldErrors = validateField('time', value, todayString, availability.slots, selectedDate);
-                    setErrors((prev) => ({ ...prev, time: fieldErrors.time }));
-                  }
+                  const fieldErrors = validateField('time', value, todayString, availability.slots, selectedDate);
+                  setErrors((prev) => ({ ...prev, time: fieldErrors.time }));
                 }}
                 onBlur={() => {
                   setTouched((prev) => ({ ...prev, time: true }));
@@ -249,6 +252,38 @@ export function BookingForm() {
                 max={availableTimesForDate[availableTimesForDate.length - 1] || undefined}
                 minutesStep={30}
                 error={touched.time && errors.time ? errors.time : null}
+                className="antaran-time-picker"
+                pointer
+                styles={{
+                  input: {
+                    backgroundColor: 'var(--color-neutral-mist)',
+                    borderColor: 'var(--color-neutral-line)',
+                    borderRadius: '0.375rem',
+                    minHeight: '3rem',
+                    padding: '0 1rem',
+                  },
+                  fieldsRoot: {
+                    width: '100%',
+                  },
+                  fieldsGroup: {
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.25rem',
+                  },
+                  field: {
+                    width: '3.5rem',
+                    minWidth: '3.5rem',
+                    minHeight: '2.75rem',
+                    padding: '0',
+                    border: '0',
+                    borderRadius: 0,
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-neutral-ink)',
+                    textAlign: 'center',
+                  },
+                }}
               />
               <input type="hidden" name="time" value={selectedTime} />
             </div>

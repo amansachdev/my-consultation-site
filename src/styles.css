@@ -182,31 +182,30 @@
     @apply text-ink/80;
   }
 
-  /* Mantine TimePicker should match Antaran field styling */
-  .mantine-TimePicker-root .mantine-Input-section,
-  .mantine-TimePicker-root .mantine-Input-section:empty {
+  /* Keep the Mantine picker as one field while preserving its keyboard inputs. */
+  .antaran-time-picker .mantine-TimePicker-section,
+  .antaran-time-picker .mantine-TimePicker-section:empty {
     display: none !important;
   }
 
-  .mantine-TimePicker-fieldsGroup {
-    background-color: transparent !important;
-    border: none !important;
+  .antaran-time-picker .mantine-TimePicker-fieldsGroup > span {
+    color: var(--color-neutral-ink);
+    font-weight: 600;
   }
 
-  .mantine-TimePicker-fieldsGroup span {
-    background-color: transparent !important;
-    border: none !important;
+  .antaran-time-picker .mantine-TimePicker-presetControl {
+    cursor: pointer;
   }
 
-  .mantine-TimePicker-field input {
-    background-color: #f6f7f3 !important;
-    color: #20201d !important;
-    border: none !important;
+  .antaran-time-picker .mantine-TimePicker-field {
+    border: 0 !important;
+    outline: none;
     box-shadow: none !important;
+    appearance: none;
   }
 
-  .mantine-TimePicker-field input::selection {
-    background-color: #6b8a75;
-    color: #ffffff;
+  .antaran-time-picker .mantine-TimePicker-field::selection {
+    background-color: var(--color-brand-leaf);
+    color: var(--color-neutral-white);
   }
 }
