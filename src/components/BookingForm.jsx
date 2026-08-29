@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowRight, Mail, MapPin, Phone } from 'lucide-react';
+import { MantineTimePicker } from './MantineTimePicker';
 import { consultationTypes, doctor } from '../constants';
 import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
@@ -19,6 +20,7 @@ export function BookingForm() {
   const [availability, setAvailability] = useState({ enabled: false, slots: [] });
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
+  const [selectedTime, setSelectedTime] = useState('');
 
   const todayString = useMemo(() => {
     const now = new Date();
@@ -106,6 +108,7 @@ export function BookingForm() {
       setBookingConsentGiven(false);
       setConsentGiven(false);
       setSelectedDate('');
+      setSelectedTime('');
       setSubmitted(true);
     } catch (error) {
       setSubmitError(error.message);
@@ -213,34 +216,79 @@ export function BookingForm() {
                 disabled={dateInputDisabled}
                 aria-invalid={touched.date && errors.date ? 'true' : 'false'}
                 aria-describedby={touched.date && errors.date ? 'date-error' : undefined}
-                className={touched.date && errors.date ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}
+                className={`cursor-pointer ${touched.date && errors.date ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}`}
                 onBlur={handleBlur}
-                onChange={(event) => { setSelectedDate(event.target.value); handleChange(event); }}
+                onChange={(event) => {
+                  setSelectedDate(event.target.value);
+                  setSelectedTime('');
+                  setErrors((prev) => ({ ...prev, time: undefined }));
+                  handleChange(event);
+                }}
               />
               {touched.date && errors.date && (
                 <span id="date-error" className="text-xs font-medium text-semantic-danger">{errors.date}</span>
               )}
             </label>
-            <label className="field">
+            <div className="field">
               <span>Preferred time<span className="text-semantic-danger"> *</span></span>
-              <input
+              <MantineTimePicker
                 key={selectedDate}
-                type="time"
-                name="time"
+                value={selectedTime}
+                onChange={(value) => {
+                  setSelectedTime(value);
+                  const fieldErrors = validateField('time', value, todayString, availability.slots, selectedDate);
+                  setErrors((prev) => ({ ...prev, time: fieldErrors.time }));
+                }}
+                onBlur={() => {
+                  setTouched((prev) => ({ ...prev, time: true }));
+                  const fieldErrors = validateField('time', selectedTime, todayString, availability.slots, selectedDate);
+                  setErrors((prev) => ({ ...prev, time: fieldErrors.time }));
+                }}
                 disabled={timeInputDisabled}
-                min={availableTimesForDate[0] || ''}
-                max={availableTimesForDate[availableTimesForDate.length - 1] || ''}
-                step="1800"
-                aria-invalid={touched.time && errors.time ? 'true' : 'false'}
-                aria-describedby={touched.time && errors.time ? 'time-error' : undefined}
-                className={touched.time && errors.time ? 'border-semantic-danger focus:border-semantic-danger focus:ring-semantic-danger/15' : ''}
-                onBlur={handleBlur}
-                onChange={handleChange}
+                withDropdown
+                format="12h"
+                amPmInputLabel="AM or PM"
+                closeDropdownOnPresetSelect
+                presets={availableTimesForDate}
+                min={availableTimesForDate[0] || undefined}
+                max={availableTimesForDate[availableTimesForDate.length - 1] || undefined}
+                minutesStep={30}
+                error={touched.time && errors.time ? errors.time : null}
+                className="antaran-time-picker"
+                pointer
+                styles={{
+                  input: {
+                    backgroundColor: 'var(--color-neutral-mist)',
+                    borderColor: 'var(--color-neutral-line)',
+                    borderRadius: '0.375rem',
+                    minHeight: '3rem',
+                    padding: '0 1rem',
+                  },
+                  fieldsRoot: {
+                    width: '100%',
+                  },
+                  fieldsGroup: {
+                    width: '100%',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '0.25rem',
+                  },
+                  field: {
+                    width: '3.5rem',
+                    minWidth: '3.5rem',
+                    minHeight: '2.75rem',
+                    padding: '0',
+                    border: '0',
+                    borderRadius: 0,
+                    backgroundColor: 'transparent',
+                    color: 'var(--color-neutral-ink)',
+                    textAlign: 'center',
+                  },
+                }}
               />
-              {touched.time && errors.time && (
-                <span id="time-error" className="text-xs font-medium text-semantic-danger">{errors.time}</span>
-              )}
-            </label>
+              <input type="hidden" name="time" value={selectedTime} />
+            </div>
           </div>
           <label className="field">
             <span>What would you like help with?</span>
@@ -332,8 +380,10 @@ function validateField(name, value, todayString, slots, selectedDate) {
 
   if (name === 'age') {
     const age = value ? Number(value) : NaN;
-    if (value && (Number.isNaN(age) || age < 1 || age > 120 || !Number.isInteger(age))) {
-      errors[name] = 'Please enter a valid age between 1 and 120.';
+    if (!value) {
+      errors[name] = 'Please enter your age.';
+    } else if (Number.isNaN(age) || age < 18 || age > 120 || !Number.isInteger(age)) {
+      errors[name] = 'Please enter a valid age between 18 and 120.';
     }
   }
 
@@ -357,7 +407,9 @@ function validateField(name, value, todayString, slots, selectedDate) {
 
   if (name === 'email') {
     const trimmed = String(value || '').trim();
-    if (trimmed && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    if (!trimmed) {
+      errors[name] = 'Please enter your email address.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
       errors[name] = 'Please enter a valid email address.';
     }
   }

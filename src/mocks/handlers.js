@@ -60,6 +60,7 @@ function validateBooking(body) {
     booking.fullName &&
     Number.isInteger(booking.age) && booking.age >= 18 && booking.age <= 120 &&
     booking.phone &&
+    booking.email &&
     booking.consultationType &&
     booking.preferredDate &&
     booking.preferredTime;

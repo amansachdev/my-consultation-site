@@ -31,17 +31,19 @@ export function AuthProvider({ children }) {
     setMockUserState(null);
   }, []);
 
-  const devSignIn = useCallback((email) => {
+  const devSignIn = useCallback(async (email) => {
     if (!isMockMode()) return;
+    if (firebaseAuth && firebaseUser) await firebaseSignOut(firebaseAuth);
     const user = { email };
     setMockUser(user);
     setMockUserState(user);
-  }, []);
+  }, [firebaseUser]);
 
-  const devSignOut = useCallback(() => {
+  const devSignOut = useCallback(async () => {
+    if (firebaseAuth && firebaseUser) await firebaseSignOut(firebaseAuth);
     clearMockUser();
     setMockUserState(null);
-  }, []);
+  }, [firebaseUser]);
 
   const value = useMemo(() => {
     const user = firebaseUser

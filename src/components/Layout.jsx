@@ -2,10 +2,13 @@ import {
   CalendarCheck,
   Instagram,
   Mail,
+  Menu,
   MapPin,
   MessageCircle,
   Phone,
+  X,
 } from 'lucide-react';
+import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { adminEmails, brand, doctor } from '../constants';
 import { useAuth } from '../context/useAuth';
@@ -23,7 +26,8 @@ export function Layout({ children }) {
 }
 
 function Header() {
-  const { isAuthenticated, status, signIn, user } = useAuth();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { isAuthenticated, status, signIn, signOut, user } = useAuth();
   const isClinician = isAuthenticated && user?.email?.toLowerCase() === doctor.email.toLowerCase();
   const isAdmin = isAuthenticated && adminEmails.includes(user?.email?.toLowerCase());
 
@@ -48,7 +52,7 @@ function Header() {
         </div>
         <div className="flex items-center gap-2">
           {status === 'ready' && (isAuthenticated ? (
-            <Link to="/account" className="btn-secondary h-10 px-3 text-sm sm:px-4">Account</Link>
+            <Link to="/account" className="btn-secondary hidden h-10 px-3 text-sm sm:px-4 md:inline-flex">Account</Link>
           ) : (
             <button type="button" onClick={signIn} className="btn-secondary h-10 px-3 text-sm sm:px-4">Sign in</button>
           ))}
@@ -56,8 +60,39 @@ function Header() {
             <CalendarCheck size={17} />
             Book
           </Link>
+          <button
+            type="button"
+            className="btn-secondary h-10 w-10 px-0 md:hidden"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={mobileMenuOpen}
+            onClick={() => setMobileMenuOpen((open) => !open)}
+          >
+            {mobileMenuOpen ? <X size={19} /> : <Menu size={19} />}
+          </button>
         </div>
       </nav>
+      {mobileMenuOpen && (
+        <div className="absolute right-5 top-[4.5rem] w-64 rounded-lg border border-line bg-white p-2 shadow-lg md:hidden" role="dialog" aria-label="Mobile navigation">
+          <div className="grid gap-1 text-sm font-medium text-ink/80">
+            <MobileNavLink to="/assessment" onClick={() => setMobileMenuOpen(false)}>Assessments</MobileNavLink>
+            <MobileNavLink to="/team" onClick={() => setMobileMenuOpen(false)}>Know your team</MobileNavLink>
+            {isAdmin ? <MobileNavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin</MobileNavLink> : isClinician && <MobileNavLink to="/clinician/prescriptions" onClick={() => setMobileMenuOpen(false)}>Prescriptions</MobileNavLink>}
+            {isAuthenticated && <MobileNavLink to="/account" onClick={() => setMobileMenuOpen(false)}>Account</MobileNavLink>}
+            {isAuthenticated && (
+              <button
+                type="button"
+                className="rounded-md px-3 py-2.5 text-left text-semantic-danger transition hover:bg-semantic-danger/10"
+                onClick={async () => {
+                  await signOut();
+                  setMobileMenuOpen(false);
+                }}
+              >
+                Sign out
+              </button>
+            )}
+          </div>
+        </div>
+      )}
     </header>
   );
 }
@@ -98,6 +133,22 @@ function NavLink({ to, children }) {
       to={to}
       className={`transition hover:text-ink ${
         isActive ? 'font-semibold text-ink' : ''
+      }`}
+    >
+      {children}
+    </Link>
+  );
+}
+
+function MobileNavLink({ to, children, onClick }) {
+  const location = useLocation();
+  const isActive = location.pathname === to;
+  return (
+    <Link
+      to={to}
+      onClick={onClick}
+      className={`rounded-md px-3 py-2.5 transition hover:bg-mist hover:text-ink ${
+        isActive ? 'bg-mist font-semibold text-ink' : ''
       }`}
     >
       {children}
