@@ -29,15 +29,31 @@ export function TeamPage() {
             </h3>
             <p className="text-lg font-medium text-moss">{doctor.qualification}</p>
           </div>
-          <p className="leading-7 text-ink/70">
-            Dr Medha is a Consultant Psychiatrist with an MBBS and MD in
-            Psychiatry, currently completing a Clinical Post-Doctoral Fellowship
-            at NIMHANS, Bengaluru. Her experience includes psychiatric
-            assessment and management across concerns such as anxiety, low
-            mood, sleep, stress, addiction, and medication care. She brings an
-            evidence-based, patient-centred approach to secure online
-            consultations.
-          </p>
+          <div className="space-y-4 leading-7 text-ink/70">
+            <p>
+              Dr. Medha is a psychiatrist committed to providing compassionate,
+              evidence-based, and affordable mental healthcare. She completed
+              her MBBS from Bellary Medical College and Research Centre and her
+              MD in Psychiatry from Kempegowda Institute of Medical Sciences,
+              Bengaluru.
+            </p>
+            <p>
+              She secured Rank 2 in Psychiatry under RGUHS with distinction and
+              has gained clinical experience at NIMHANS, Bengaluru, along with
+              experience providing psychiatric consultations through multiple
+              online healthcare platforms.
+            </p>
+            <p>
+              Her approach is centred on understanding each individual beyond
+              their symptoms and creating a comfortable, non-judgmental space
+              where patients can openly discuss their concerns.
+            </p>
+            <p>
+              Through Antaran, she aims to make quality psychiatric care more
+              accessible and affordable, while helping individuals take a
+              meaningful step towards better mental well-being.
+            </p>
+          </div>
           <div className="space-y-2 text-sm text-ink/72">
             <div className="flex items-center gap-3">
               <Phone size={18} className="text-clay" />

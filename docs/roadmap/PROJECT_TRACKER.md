@@ -114,6 +114,7 @@
 | 2026-08-23 | Added Mermaid diagrams for current architecture, booking flow, authentication/data access, roadmap dependencies, and booking data shape | Agent |
 | 2026-08-24 | Enabled GA4 and Microsoft Clarity automatically without an analytics prompt, scoped to anonymous public home/team page insights; account, booking, assessment, and clinician routes remain excluded | Agent |
 | 2026-08-24 | Added a clinician-only, download-only prescription PDF generator with local document creation, medicine rows, A4 Antaran letterhead styling, and server-side clinician allowlisting; prescription data is not persisted | Agent |
+| 2026-08-29 | Updated the Know your team profile with Dr. Medha’s approved qualifications, education, experience, care approach, and Antaran mission | Agent |
 | 2026-08-26 | Added shared admin-managed 30-minute availability, blocked dates, public slot generation, one-booking-per-slot reservations, and an admin workspace containing availability and prescription tabs | Agent |
 | 2026-08-27 | Added MSW (Mock Service Worker) setup for local frontend development with `npm run dev:mock`, mocking auth, availability, bookings, profile, assessments, and admin/clinician workspace endpoints | Agent |
 | 2026-08-27 | Polished booking form alignment, replaced date/time dropdowns with native calendar/time inputs, hid the single consultation type, improved admin/clinician loading states, removed duplicate admin header, and redesigned availability editor with day chips and a shared daily time range | Agent |
