@@ -121,4 +121,5 @@
 | 2026-08-29 | Enforced required patient age and email validation consistently in the booking UI, local mock API, and Azure Function API | Agent |
 | 2026-08-29 | Added a balanced assessment card beside the consultation card so the consultations section offers both care paths without an empty panel | Agent |
 | 2026-08-29 | Fixed mock-mode auth switching so sign-out clears an active Firebase session and Admin, Clinician, and Patient test identities can be selected reliably | Agent |
+| 2026-08-29 | Replaced the prominent mobile navigation row with a compact menu button and role-aware popover menu beside Book | Agent |
 | 2026-08-24 | Added dormant Razorpay Test Mode payment scaffolding with a fixed ₹5 server-side order, signature verification, and webhook endpoint; booking UI remains unchanged while `PAYMENTS_ENABLED=false` | Agent |
