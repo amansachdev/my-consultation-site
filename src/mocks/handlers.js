@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { doctor } from '../constants';
 import { getPrincipal, requireAdmin, requireAuth, requireClinician } from './auth';
-import { mockAssessments, mockAvailability, mockBookings, mockProfile, reservedSlotKeys, updateAvailability, updateProfile } from './data';
+import { addMockProvider, mockAssessments, mockAvailability, mockBookings, mockProfile, mockProviders, reservedSlotKeys, updateAvailability, updateMockProviderStatus, updateProfile } from './data';
 import { generateSlots } from './slots';
 
 const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -130,15 +130,52 @@ export const handlers = [
     return HttpResponse.json({ availability: mockAvailability });
   }),
 
-  http.get('/api/clinician/access', ({ request }) => {
-    const auth = requireClinician(request);
+  http.get('/api/providers', ({ request }) => {
+    const auth = requireAdmin(request);
     if (auth.response) return HttpResponse.json(auth.response, { status: auth.status });
+    return HttpResponse.json({ providers: mockProviders });
+  }),
+
+  http.post('/api/providers', async ({ request }) => {
+    const auth = requireAdmin(request);
+    if (auth.response) return HttpResponse.json(auth.response, { status: auth.status });
+    const body = await request.json();
+    const provider = {
+      fullName: String(body.fullName || '').trim().slice(0, 120),
+      email: String(body.email || '').trim().toLowerCase().slice(0, 160),
+      phone: String(body.phone || '').trim().slice(0, 30),
+      professionalType: String(body.professionalType || 'other').trim().toLowerCase(),
+      registrationNumber: String(body.registrationNumber || '').trim().slice(0, 80),
+      registrationCouncil: String(body.registrationCouncil || '').trim().slice(0, 120),
+      qualifications: String(body.qualifications || '').trim().slice(0, 240),
+      specializations: String(body.specializations || '').trim().slice(0, 240),
+    };
+    if (!provider.fullName || !provider.email.includes('@') || !provider.registrationNumber || !provider.registrationCouncil || !provider.qualifications) {
+      return HttpResponse.json({ error: 'Name, email, registration details, and qualifications are required.' }, { status: 400 });
+    }
+    if (mockProviders.some((item) => item.email === provider.email)) return HttpResponse.json({ error: 'A provider with this email already exists.' }, { status: 409 });
+    const record = { id: crypto.randomUUID(), ...provider, status: 'pending_review', createdBy: auth.principal.userId, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+    addMockProvider(record);
+    return HttpResponse.json({ provider: record }, { status: 201 });
+  }),
+
+  http.patch('/api/providers/:id/status', async ({ request, params }) => {
+    const auth = requireAdmin(request);
+    if (auth.response) return HttpResponse.json(auth.response, { status: auth.status });
+    const { status } = await request.json();
+    if (!['pending_review', 'verified', 'rejected', 'suspended'].includes(status)) return HttpResponse.json({ error: 'Invalid provider status.' }, { status: 400 });
+    const provider = updateMockProviderStatus(params.id, status);
+    return provider ? HttpResponse.json({ provider }) : HttpResponse.json({ error: 'Provider not found.' }, { status: 404 });
+  }),
+
+  http.get('/api/clinician/access', ({ request }) => {
+    const principal = getPrincipal(request);
+    if (!principal) return HttpResponse.json({ error: 'Sign-in is required.' }, { status: 401 });
+    const provider = mockProviders.find((item) => item.email === principal.email.toLowerCase() && item.status === 'verified');
+    const auth = requireClinician(request);
+    if (auth.response && !provider) return HttpResponse.json(auth.response, { status: auth.status });
     return HttpResponse.json({
-      clinician: {
-        email: auth.principal.email,
-        name: doctor.name,
-        registrationNumber: 'KMC: 143480',
-      },
+      clinician: provider || { email: auth.principal.email, name: doctor.name, registrationNumber: 'KMC: 143480' },
     });
   }),
 
