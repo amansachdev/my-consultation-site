@@ -62,3 +62,12 @@ export function requireClinician(request) {
   }
   return auth;
 }
+
+export function getRoles(principal) {
+  if (!principal) return [];
+  const email = principal.email.toLowerCase();
+  return [
+    ...(ADMIN_EMAILS.has(email) ? ['admin'] : []),
+    ...(CLINICIAN_EMAILS.has(email) ? ['clinician'] : []),
+  ];
+}

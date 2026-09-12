@@ -2,6 +2,15 @@
   "platform": {
     "apiRuntime": "node:22"
   },
+  "globalHeaders": {
+    "Content-Security-Policy": "default-src 'self' https://*.clarity.ms https://c.bing.com; base-uri 'self'; object-src 'none'; frame-ancestors 'none'; form-action 'self'; upgrade-insecure-requests; script-src 'self' 'unsafe-inline' https://www.googletagmanager.com https://www.google-analytics.com https://www.clarity.ms https://scripts.clarity.ms https://*.clarity.ms https://apis.google.com https://accounts.google.com https://checkout.razorpay.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; img-src 'self' data: blob: https://*.clarity.ms https://www.google-analytics.com; font-src 'self' data: https://fonts.gstatic.com; connect-src 'self' https://*.firebaseio.com https://*.firebaseapp.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebaseinstallations.googleapis.com https://www.googleapis.com https://www.google-analytics.com https://analytics.google.com https://*.clarity.ms https://c.bing.com https://api.razorpay.com https://lumberjack.razorpay.com; frame-src 'self' https://accounts.google.com https://*.firebaseapp.com https://checkout.razorpay.com; worker-src 'self' blob:; child-src 'self' blob:",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "Referrer-Policy": "strict-origin-when-cross-origin",
+    "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+    "Permissions-Policy": "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    "Cross-Origin-Opener-Policy": "same-origin-allow-popups"
+  },
   "navigationFallback": {
     "rewrite": "/index.html",
     "exclude": [

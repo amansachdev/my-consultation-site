@@ -41,6 +41,8 @@
 | Q-LEGAL-03 | Legal | Data-retention schedule for medical records and audit logs | Minimum retention often tied to clinical / legal requirements; affects deletion policy. | Legal | Open |
 | Q-LEGAL-04 | Legal | Grievance / nodal officer and response timelines | Required under IT Rules and good clinical governance. | Legal / Admin | Open |
 | Q-LEGAL-05 | Legal | DPDP Act 2023 readiness and consent-manager approach | How explicit consent is captured, withdrawn, and logged. | Legal | Open |
+| Q-LEGAL-06 | Legal | Prescription record consent and retention | Confirm notice/consent wording and retention period for clinician-created prescription records stored in Cosmos DB. | Legal / Clinician | Proposed |
+| Q-CLIN-09 | Clinical / Operations | Crisis contact verification and ownership | Clinician/Admin must verify helpline numbers and approve additions such as Tele-MANAS. | Clinician / Admin | Proposed |
 | Q-TECH-01 | Tech | Frontend strategy: migrate to Next.js or keep Vite React landing + separate Next.js apps? | Next.js gives SSR, routing, API routes; Vite landing is already built. | Tech / Admin | Decided |
 | Q-TECH-02 | Tech | Auth provider: self-hosted vs Clerk / Auth0 / Firebase Auth | Self-hosted gives control; managed reduces build time. Clinicians/admins need MFA. | Tech | Decided |
 | Q-TECH-03 | Tech | Video provider: 100ms vs Daily.co vs Twilio vs self-hosted Jitsi | Need India presence, waiting rooms, recording opt-in, reasonable cost. | Tech | Proposed |

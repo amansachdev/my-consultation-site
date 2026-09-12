@@ -3,10 +3,12 @@ import { GoogleAuthProvider, onAuthStateChanged, signInWithPopup, signOut as fir
 import { AuthContext } from './auth-context';
 import { firebaseAuth, firebaseConfigured } from '../lib/firebase';
 import { clearMockUser, getMockUser, isMockMode, setMockUser } from '../lib/dev-auth';
+import { apiRequest } from '../lib/api';
 
 export function AuthProvider({ children }) {
   const [firebaseUser, setFirebaseUser] = useState(null);
   const [mockUser, setMockUserState] = useState(() => getMockUser());
+  const [roles, setRoles] = useState([]);
   const [status, setStatus] = useState(firebaseConfigured ? 'loading' : 'ready');
 
   useEffect(() => {
@@ -19,6 +21,22 @@ export function AuthProvider({ children }) {
       setStatus('ready');
     });
   }, []);
+
+  useEffect(() => {
+    if (!firebaseUser && !mockUser) {
+      setRoles([]);
+      return undefined;
+    }
+    let cancelled = false;
+    apiRequest('/me')
+      .then((response) => {
+        if (!cancelled) setRoles(response.user?.roles || []);
+      })
+      .catch(() => {
+        if (!cancelled) setRoles([]);
+      });
+    return () => { cancelled = true; };
+  }, [firebaseUser, mockUser]);
 
   const signIn = useCallback(async () => {
     if (!firebaseAuth) throw new Error('Google sign-in is not configured yet.');
@@ -57,8 +75,9 @@ export function AuthProvider({ children }) {
       devSignIn,
       devSignOut,
       isMockUser: Boolean(mockUser) && !firebaseUser,
+      roles,
     };
-  }, [firebaseUser, mockUser, status, signIn, signOut, devSignIn, devSignOut]);
+  }, [firebaseUser, mockUser, roles, status, signIn, signOut, devSignIn, devSignOut]);
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
