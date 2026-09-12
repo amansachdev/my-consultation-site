@@ -33,6 +33,10 @@ separate module remain open.
 - **MVP clinician model:** Founder-only, architected for multi-clinician expansion
 - **Current code:** Public Vite + React + Tailwind site with optional patient account portal, assessment flow, booking flow, admin workspace, clinician prescription workspace, and Azure Functions API
 - **Backend:** Azure Functions API implements Cosmos-backed profiles, consent records, assessments, availability, slot reservations, and booking requests; environment configuration is deployment-owned
+
+### Recent remediation
+
+- **Quality audit remediation:** PR #23, commit `fddfcd2`; see `docs/QUALITY_AUDIT_REPORT.md` for fixed and deferred findings.
 - **Auth:** Optional Google sign-in through Firebase Authentication with server-side token verification and role-gated admin/clinician routes; public routes remain ungated
 - **Booking:** Production booking slice is implemented: shared Asia/Kolkata availability, blocked dates/slots, one-booking-per-slot reservation, guest and signed-in requests, Google Calendar/Meet creation, owner notification, and timed Join access
 - **Payments/video:** Razorpay test-mode backend scaffolding exists but is disabled; Google Meet is used for the current consultation-link flow, while provider-based video, payment completion, invoices, and payouts remain future work
