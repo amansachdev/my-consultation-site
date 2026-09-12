@@ -324,7 +324,7 @@ export function BookingForm() {
           </label>
            <label className="flex items-start gap-3 text-sm leading-6 text-ink/80">
              <input type="checkbox" required checked={consentGiven} onChange={(event) => setConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-brand-forest" />
-             <span>I consent to Antaran using these details to contact me about this booking request and, if I am signed in, storing it in my account so I can view its status later.<span className="text-semantic-danger"> *</span></span>
+             <span>I consent to Antaran contacting me about this request and saving it to my account when signed in.<span className="text-semantic-danger"> *</span></span>
            </label>
           {submitError && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{submitError}</p>}
           {!availabilityLoading && !availability.enabled && <p className="rounded-md bg-mist p-3 text-sm text-ink/70">Booking is temporarily unavailable. Please check back soon.</p>}
