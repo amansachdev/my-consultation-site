@@ -1,9 +1,7 @@
 name: Deploy to Azure Static Web Apps
 
 on:
-  push:
-    branches:
-      - main
+  # Production releases must be started deliberately from Actions.
   workflow_dispatch:
 
 permissions:
