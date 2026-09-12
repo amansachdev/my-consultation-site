@@ -8,6 +8,9 @@ import { ClinicianPage } from './pages/ClinicianPage';
 import { AdminPage } from './pages/AdminPage';
 import { HomePage } from './pages/HomePage';
 import { TeamPage } from './pages/TeamPage';
+import { SymptomsPage } from './pages/SymptomsPage';
+import { ResourcesPage } from './pages/ResourcesPage';
+import { PreparePage } from './pages/PreparePage';
 
 function App() {
   return (
@@ -19,6 +22,9 @@ function App() {
           <Route path="/book" element={<BookPage />} />
           <Route path="/assessment" element={<AssessmentPage />} />
           <Route path="/team" element={<TeamPage />} />
+          <Route path="/symptoms" element={<SymptomsPage />} />
+          <Route path="/resources" element={<ResourcesPage />} />
+          <Route path="/prepare" element={<PreparePage />} />
           <Route path="/account" element={<AccountPage />} />
           <Route path="/clinician/prescriptions" element={<ClinicianPage />} />
           <Route path="/admin" element={<AdminPage />} />

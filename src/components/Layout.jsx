@@ -46,8 +46,11 @@ function Header() {
         </Link>
         <div className="hidden items-center gap-7 text-sm font-medium text-ink/70 md:flex">
           <NavLink to="/book">Book</NavLink>
-          <NavLink to="/assessment">Assessments</NavLink>
-          <NavLink to="/team">Know your team</NavLink>
+           <NavLink to="/assessment">Assessments</NavLink>
+           <NavLink to="/team">Know your team</NavLink>
+           <NavLink to="/symptoms">Symptoms</NavLink>
+           <NavLink to="/resources">Resources</NavLink>
+           <NavLink to="/prepare">Prepare</NavLink>
           {isAdmin ? <NavLink to="/admin">Admin</NavLink> : isClinician && <NavLink to="/clinician/prescriptions">Prescriptions</NavLink>}
         </div>
         <div className="flex items-center gap-2">
@@ -75,7 +78,10 @@ function Header() {
         <div className="absolute right-5 top-[4.5rem] w-64 rounded-lg border border-line bg-white p-2 shadow-lg md:hidden" role="dialog" aria-label="Mobile navigation">
           <div className="grid gap-1 text-sm font-medium text-ink/80">
             <MobileNavLink to="/assessment" onClick={() => setMobileMenuOpen(false)}>Assessments</MobileNavLink>
-            <MobileNavLink to="/team" onClick={() => setMobileMenuOpen(false)}>Know your team</MobileNavLink>
+             <MobileNavLink to="/team" onClick={() => setMobileMenuOpen(false)}>Know your team</MobileNavLink>
+             <MobileNavLink to="/symptoms" onClick={() => setMobileMenuOpen(false)}>Symptoms</MobileNavLink>
+             <MobileNavLink to="/resources" onClick={() => setMobileMenuOpen(false)}>Resources</MobileNavLink>
+             <MobileNavLink to="/prepare" onClick={() => setMobileMenuOpen(false)}>Prepare for a consultation</MobileNavLink>
             {isAdmin ? <MobileNavLink to="/admin" onClick={() => setMobileMenuOpen(false)}>Admin</MobileNavLink> : isClinician && <MobileNavLink to="/clinician/prescriptions" onClick={() => setMobileMenuOpen(false)}>Prescriptions</MobileNavLink>}
             {isAuthenticated && <MobileNavLink to="/account" onClick={() => setMobileMenuOpen(false)}>Account</MobileNavLink>}
             {isAuthenticated && (

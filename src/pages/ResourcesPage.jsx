@@ -1,0 +1,22 @@
+import { ArrowRight, BookOpen, HeartHandshake, ShieldCheck, Sparkles } from 'lucide-react';
+import { Link } from 'react-router-dom';
+
+const resources = [
+  { icon: BookOpen, label: 'Starting care', title: 'What to expect from a first consultation', text: 'A calm overview of what you can share, what a clinician may ask, and how to prepare without rehearsing the “right” answers.', detail: 'A first consultation is a conversation about what has been happening, how long it has been happening, and how it affects daily life. You can begin with the concern that feels most important today.' },
+  { icon: HeartHandshake, label: 'Everyday support', title: 'When stress starts taking over', text: 'Notice the difference between a demanding season and stress that is affecting sleep, relationships, work, or daily functioning.', detail: 'Stress deserves attention when recovery becomes difficult or when it begins changing your sleep, mood, body, relationships, or ability to manage ordinary tasks.' },
+  { icon: Sparkles, label: 'Better sleep', title: 'A kinder way to think about sleep', text: 'Understand how sleep and emotional health influence each other, and what information can help a clinician understand the pattern.', detail: 'Notice timing, duration, awakenings, daytime tiredness, and changes in mood. A simple record can help you describe the pattern without trying to diagnose its cause.' },
+  { icon: ShieldCheck, label: 'Clarity and privacy', title: 'Questions to ask before online care', text: 'A practical checklist for understanding confidentiality, consultation limits, technology, and what happens after a session.', detail: 'You can ask how information is handled, what happens if the video connection fails, how follow-up works, and what to do if your concern becomes urgent.' },
+];
+
+export function ResourcesPage() {
+  return <main>
+    <section className="border-b border-line bg-brand-sand"><div className="section py-16 text-center lg:py-24"><p className="eyebrow">Resources</p><h1 className="mx-auto max-w-4xl font-serif text-5xl font-semibold leading-tight md:text-7xl">Small pieces of clarity for the days that feel complicated.</h1><p className="mx-auto mt-6 max-w-2xl text-lg leading-8 text-ink/70">Thoughtful education can help you name a concern and decide whether support might be useful. It is not a substitute for personalised care.</p></div></section>
+    <section className="section"><div className="section-heading"><p className="eyebrow">Explore the library</p><h2>Start where it feels useful.</h2><p>Read at your own pace, then bring your questions into an assessment or consultation.</p></div><div className="grid gap-5 md:grid-cols-2">{resources.map((resource) => <ResourceCard key={resource.title} resource={resource} />)}</div></section>
+    <section className="bg-brand-sage"><div className="section grid gap-8 lg:grid-cols-[1fr_auto] lg:items-center"><div><p className="eyebrow">No perfect starting point required</p><h2 className="max-w-2xl font-serif text-4xl font-semibold">You can begin with a question, not a diagnosis.</h2><p className="mt-4 max-w-2xl text-lg leading-8 text-ink/70">If you are unsure what kind of help fits, a short assessment can help you reflect on recent mood and anxiety symptoms before you decide on your next step.</p></div><div className="flex flex-col gap-3 sm:flex-row lg:flex-col"><Link className="btn-primary" to="/assessment">Take an assessment <ArrowRight size={17} /></Link><Link className="btn-secondary" to="/book">Book a consultation</Link></div></div></section>
+  </main>;
+}
+
+function ResourceCard({ resource }) {
+  const Icon = resource.icon;
+  return <article className="group rounded-xl border border-line bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-8"><Icon className="text-brand-coral" size={26} /><p className="mt-6 text-sm font-semibold uppercase tracking-[0.12em] text-brand-forest">{resource.label}</p><h3 className="mt-3 font-serif text-3xl font-semibold">{resource.title}</h3><p className="mt-4 max-w-xl leading-7 text-ink/70">{resource.text}</p><details className="mt-5 border-t border-line pt-4"><summary className="flex cursor-pointer list-none items-center gap-2 font-semibold text-brand-forest">Read guide <ArrowRight size={16} className="transition group-open:rotate-90" /></summary><p className="mt-4 leading-7 text-ink/70">{resource.detail}</p></details></article>;
+}
