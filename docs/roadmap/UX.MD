@@ -42,3 +42,14 @@ Status: implemented on `main` (2026-09-12).
 - `/prepare` provides a consultation preparation checklist and repeats the emergency-care boundary.
 - These pages use the existing design tokens and public navigation. They do not add API calls, persist health information, change assessment scoring, or change booking behavior.
 - All clinical education and emergency contact copy should receive clinician review before being treated as final launch content.
+
+## SEO foundation
+
+Status: implemented on `main` (2026-09-12).
+
+- Public routes now update their title, description, canonical URL, Open Graph/Twitter metadata, robots directive, and page schema through the shared `Seo` component.
+- `/account`, `/admin`, and `/clinician/*` are marked `noindex, nofollow` in the document head, Azure response headers, and `robots.txt`.
+- `public/sitemap.xml` lists only the public routes, and `public/robots.txt` references it.
+- Analytics page views now include the public booking, assessment, symptoms, resources, and preparation routes while keeping private routes excluded.
+- This phase does not change booking, assessment scoring, authentication, API behavior, or persisted data.
+- Static prerendering and clinician review of SEO copy remain follow-up launch work.

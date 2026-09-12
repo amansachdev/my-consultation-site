@@ -20,6 +20,24 @@
   },
   "routes": [
     {
+      "route": "/account",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "route": "/admin",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
+      "route": "/clinician/*",
+      "headers": {
+        "X-Robots-Tag": "noindex, nofollow"
+      }
+    },
+    {
       "route": "/api/*",
       "allowedRoles": ["anonymous"]
     }

@@ -11,11 +11,13 @@ import { TeamPage } from './pages/TeamPage';
 import { SymptomsPage } from './pages/SymptomsPage';
 import { ResourcesPage } from './pages/ResourcesPage';
 import { PreparePage } from './pages/PreparePage';
+import { Seo } from './components/Seo';
 
 function App() {
   return (
     <BrowserRouter basename={import.meta.env.BASE_URL}>
       <Analytics />
+      <Seo />
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />
