@@ -1,6 +1,6 @@
 import { http, HttpResponse } from 'msw';
 import { doctor } from '../constants';
-import { getPrincipal, getRoles, requireAdmin, requireAuth, requireClinician } from './auth';
+import { getPrincipal, getRoles, isVerifiedProvider, requireAdmin, requireAuth, requireClinician } from './auth';
 import { addMockProvider, mockAssessments, mockAvailability, mockBookings, mockProfile, mockProviders, mockReservations, reservedSlotKeys, updateAvailability, updateMockProviderStatus, updateProfile } from './data';
 import { generateSlots } from './slots';
 
@@ -172,9 +172,9 @@ export const handlers = [
   http.get('/api/clinician/access', ({ request }) => {
     const principal = getPrincipal(request);
     if (!principal) return HttpResponse.json({ error: 'Sign-in is required.' }, { status: 401 });
-    const provider = mockProviders.find((item) => item.email === principal.email.toLowerCase() && item.status === 'verified');
     const auth = requireClinician(request);
-    if (auth.response && !provider) return HttpResponse.json(auth.response, { status: auth.status });
+    if (auth.response) return HttpResponse.json(auth.response, { status: auth.status });
+    const provider = isVerifiedProvider(principal) ? mockProviders.find((item) => item.email === principal.email.toLowerCase() && item.status === 'verified') : null;
     return HttpResponse.json({
       clinician: provider || { email: auth.principal.email, name: doctor.name, registrationNumber: 'KMC: 143480' },
     });
