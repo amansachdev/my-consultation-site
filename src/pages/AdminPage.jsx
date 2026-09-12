@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { CalendarDays, Check, Trash2 } from 'lucide-react';
+import { CalendarDays, Check, ClipboardCheck, Plus, Trash2 } from 'lucide-react';
 import { PrescriptionWorkspace } from './ClinicianPage';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/useAuth';
@@ -26,6 +26,7 @@ export function AdminPage() {
   const [access, setAccess] = useState('checking');
   const [tab, setTab] = useState('availability');
   const [availability, setAvailability] = useState(blankAvailability);
+  const [providers, setProviders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState('');
@@ -41,9 +42,12 @@ export function AdminPage() {
     apiRequest('/workspace-access')
       .then(() => {
         setAccess('allowed');
-        return apiRequest('/workspace-availability');
+        return Promise.all([apiRequest('/workspace-availability'), apiRequest('/providers')]);
       })
-      .then((response) => setAvailability({ ...blankAvailability(), ...response.availability, weekly: { ...emptyWeekly(), ...response.availability?.weekly } }))
+      .then(([availabilityResponse, providersResponse]) => {
+        setAvailability({ ...blankAvailability(), ...availabilityResponse.availability, weekly: { ...emptyWeekly(), ...availabilityResponse.availability?.weekly } });
+        setProviders(providersResponse.providers || []);
+      })
       .catch((requestError) => setAccess(requestError.status === 403 ? 'forbidden' : 'error'))
       .finally(() => setLoading(false));
   }, [isAuthenticated, status]);
@@ -74,12 +78,112 @@ export function AdminPage() {
       <div className="mx-auto max-w-6xl">
         <div className="flex flex-wrap gap-2 border-b border-line pb-3" role="tablist" aria-label="Admin sections">
           <TabButton active={tab === 'availability'} onClick={() => setTab('availability')}><CalendarDays size={17} /> Availability</TabButton>
+          <TabButton active={tab === 'providers'} onClick={() => setTab('providers')}><ClipboardCheck size={17} /> Providers</TabButton>
           <TabButton active={tab === 'prescriptions'} onClick={() => setTab('prescriptions')}>Prescriptions</TabButton>
         </div>
-        {tab === 'availability' ? <AvailabilityEditor availability={availability} setAvailability={setAvailability} onSave={save} saving={saving} message={message} error={error} /> : <PrescriptionWorkspace accessPath="/workspace-access" accessLabel="Admin" embedded />}
+        {tab === 'availability' && <AvailabilityEditor availability={availability} setAvailability={setAvailability} onSave={save} saving={saving} message={message} error={error} />}
+        {tab === 'providers' && <ProviderWorkspace providers={providers} setProviders={setProviders} />}
+        {tab === 'prescriptions' && <PrescriptionWorkspace accessPath="/workspace-access" accessLabel="Admin" embedded />}
       </div>
     </AdminShell>
   );
+}
+
+const PROVIDER_TYPES = [
+  ['psychiatrist', 'Psychiatrist'],
+  ['psychologist', 'Psychologist'],
+  ['therapist', 'Therapist'],
+  ['counsellor', 'Counsellor'],
+  ['other', 'Other'],
+];
+
+const EMPTY_PROVIDER = {
+  fullName: '', email: '', phone: '', professionalType: 'psychiatrist', registrationNumber: '', registrationCouncil: '', qualifications: '', specializations: '',
+};
+
+function ProviderWorkspace({ providers, setProviders }) {
+  const [form, setForm] = useState(EMPTY_PROVIDER);
+  const [saving, setSaving] = useState(false);
+  const [message, setMessage] = useState('');
+  const [error, setError] = useState('');
+
+  const addProvider = async (event) => {
+    event.preventDefault();
+    setSaving(true);
+    setMessage('');
+    setError('');
+    try {
+      const response = await apiRequest('/providers', { method: 'POST', body: JSON.stringify(form) });
+      setProviders((current) => [response.provider, ...current]);
+      setForm(EMPTY_PROVIDER);
+      setMessage('Provider added for verification. They cannot access clinician tools until approved.');
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const updateStatus = async (provider, status) => {
+    setError('');
+    try {
+      const response = await apiRequest(`/providers/${provider.id}/status`, { method: 'PATCH', body: JSON.stringify({ status }) });
+      setProviders((current) => current.map((item) => item.id === provider.id ? response.provider : item));
+    } catch (requestError) {
+      setError(requestError.message);
+    }
+  };
+
+  return (
+    <div className="mt-6 grid gap-6 lg:grid-cols-[0.85fr_1.15fr]">
+      <form className="booking-form h-fit" onSubmit={addProvider}>
+        <div className="flex items-start gap-3">
+          <Plus className="mt-1 text-brand-forest" size={20} />
+          <div><h2 className="text-xl font-bold">Add a provider</h2><p className="mt-1 text-sm leading-6 text-ink/60">Create a review record for a psychiatrist, psychologist, therapist, or counsellor.</p></div>
+        </div>
+        <div className="mt-5 grid gap-4">
+          <ProviderField label="Full name *" value={form.fullName} onChange={(value) => setForm({ ...form, fullName: value })} />
+          <ProviderField label="Email *" type="email" value={form.email} onChange={(value) => setForm({ ...form, email: value })} />
+          <ProviderField label="Phone" value={form.phone} onChange={(value) => setForm({ ...form, phone: value })} />
+          <label className="field"><span>Professional type *</span><select value={form.professionalType} onChange={(event) => setForm({ ...form, professionalType: event.target.value })}>{PROVIDER_TYPES.map(([value, label]) => <option value={value} key={value}>{label}</option>)}</select></label>
+          <ProviderField label="Registration number *" value={form.registrationNumber} onChange={(value) => setForm({ ...form, registrationNumber: value })} />
+          <ProviderField label="Registration council *" value={form.registrationCouncil} onChange={(value) => setForm({ ...form, registrationCouncil: value })} />
+          <ProviderField label="Qualifications *" value={form.qualifications} onChange={(value) => setForm({ ...form, qualifications: value })} />
+          <ProviderField label="Specializations" value={form.specializations} onChange={(value) => setForm({ ...form, specializations: value })} />
+        </div>
+        {message && <p className="mt-5 rounded-md bg-semantic-success/10 p-3 text-sm font-medium text-semantic-success" role="status">{message}</p>}
+        {error && <p className="mt-5 rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{error}</p>}
+        <button className="btn-primary mt-5" type="submit" disabled={saving}>{saving ? 'Adding...' : 'Add for review'}<Plus size={17} /></button>
+      </form>
+      <section className="account-panel h-fit">
+        <div><h2 className="text-xl font-bold">Provider onboarding</h2><p className="mt-1 text-sm leading-6 text-ink/60">Only verified providers can use clinician tools. Credential uploads and formal verification remain part of the next review step.</p></div>
+        <div className="mt-5 grid gap-3">
+          {providers.length === 0 && <p className="rounded-md bg-mist p-4 text-sm text-ink/60">No providers have been added yet.</p>}
+          {providers.map((provider) => <ProviderRow key={provider.id} provider={provider} onStatusChange={updateStatus} />)}
+        </div>
+      </section>
+    </div>
+  );
+}
+
+function ProviderRow({ provider, onStatusChange }) {
+  const statusLabels = { pending_review: 'Pending review', verified: 'Verified', rejected: 'Rejected', suspended: 'Suspended' };
+  return <article className="rounded-lg border border-line bg-white p-4 shadow-sm">
+    <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-start">
+      <div><h3 className="font-semibold">{provider.fullName}</h3><p className="mt-1 text-sm text-ink/60">{provider.professionalType} · {provider.email}</p><p className="mt-2 text-sm text-ink/70">{provider.qualifications} · {provider.registrationNumber}</p>{provider.specializations && <p className="mt-1 text-xs text-ink/50">{provider.specializations}</p>}</div>
+      <span className={`status-pill shrink-0 ${provider.status === 'verified' ? 'bg-semantic-success/10 text-semantic-success' : provider.status === 'rejected' || provider.status === 'suspended' ? 'bg-semantic-danger/10 text-semantic-danger' : 'bg-semantic-warning/10 text-semantic-warning'}`}>{statusLabels[provider.status]}</span>
+    </div>
+    <div className="mt-4 flex flex-wrap gap-2">
+      {provider.status === 'pending_review' && <><button type="button" className="btn-secondary min-h-9 px-3 text-sm" onClick={() => onStatusChange(provider, 'verified')}>Verify</button><button type="button" className="btn-secondary min-h-9 px-3 text-sm text-semantic-danger" onClick={() => onStatusChange(provider, 'rejected')}>Reject</button></>}
+      {provider.status === 'rejected' && <button type="button" className="btn-secondary min-h-9 px-3 text-sm" onClick={() => onStatusChange(provider, 'verified')}>Verify</button>}
+      {provider.status === 'verified' && <button type="button" className="btn-secondary min-h-9 px-3 text-sm text-semantic-danger" onClick={() => onStatusChange(provider, 'suspended')}>Suspend</button>}
+      {provider.status === 'suspended' && <button type="button" className="btn-secondary min-h-9 px-3 text-sm" onClick={() => onStatusChange(provider, 'verified')}>Reactivate</button>}
+    </div>
+  </article>;
+}
+
+function ProviderField({ label, type = 'text', value, onChange }) {
+  return <label className="field"><span>{label}</span><input type={type} value={value} onChange={(event) => onChange(event.target.value)} required={label.endsWith('*')} /></label>;
 }
 
 function AvailabilityEditor({ availability, setAvailability, onSave, saving, message, error }) {

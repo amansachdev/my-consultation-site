@@ -35,6 +35,36 @@ export function updateProfile(next) {
 
 export const mockBookings = [];
 
+export const mockProviders = [
+  {
+    id: 'provider-dr-medha',
+    fullName: 'Dr. Medha',
+    email: 'antaran.health@gmail.com',
+    phone: '',
+    professionalType: 'psychiatrist',
+    registrationNumber: 'KMC: 143480',
+    registrationCouncil: 'Karnataka Medical Council',
+    qualifications: 'MBBS, MD Psychiatry',
+    specializations: 'Adult psychiatry',
+    status: 'verified',
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  },
+];
+
+export function addMockProvider(provider) {
+  mockProviders.unshift(provider);
+  return provider;
+}
+
+export function updateMockProviderStatus(id, status) {
+  const provider = mockProviders.find((item) => item.id === id);
+  if (!provider) return null;
+  provider.status = status;
+  provider.updatedAt = new Date().toISOString();
+  return provider;
+}
+
 export const mockAssessments = [
   {
     id: 'mock-phq9',

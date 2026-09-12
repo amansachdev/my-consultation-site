@@ -35,6 +35,7 @@
 | Q-CLIN-05 | Clinical | Emergency referral directory and crisis contacts per state | Need a vetted list of emergency services / hospitals / helplines (AASRA, iCall, state resources). | Clinician / Admin | Open |
 | Q-CLIN-06 | Clinical | Prescription policy and controlled-substance restrictions | Will the platform ever allow prescribing Schedule X / NDPS drugs? Telemedicine guidelines restrict many. | Clinician / Legal | Open |
 | Q-CLIN-07 | Clinical | Follow-up validity window and pricing | e.g., reduced fee if booked within 7 days of last consult. | Clinician | Open |
+| Q-CLIN-08 | Clinical / Operations | Which professional types can be onboarded and what permissions does each receive? | Initial provider types include psychiatrist, psychologist, therapist, counsellor, and other. Define appointment eligibility, prescribing permissions, and profile requirements per type. | Clinician / Admin | Open |
 | Q-LEGAL-01 | Legal | Operating entity and clinical-establishment registration | Solo proprietorship / LLP / Pvt Ltd? State Clinical Establishments Act registration? | Legal / Admin | Open |
 | Q-LEGAL-02 | Legal | Terms of Use, Privacy Policy, and Consent wording | Must cover telemedicine, data use, emergency limitations, payment, grievance. | Legal | Open |
 | Q-LEGAL-03 | Legal | Data-retention schedule for medical records and audit logs | Minimum retention often tied to clinical / legal requirements; affects deletion policy. | Legal | Open |

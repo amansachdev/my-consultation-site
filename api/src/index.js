@@ -73,6 +73,14 @@ async function getPrincipal(request) {
   }
 }
 
+async function readProviderByEmail(email) {
+  const { resources } = await container('providers').items.query({
+    query: 'SELECT TOP 1 * FROM c WHERE c.email = @email',
+    parameters: [{ name: '@email', value: email.toLowerCase() }],
+  }).fetchAll();
+  return resources[0] || null;
+}
+
 async function requirePrincipal(request) {
   const principal = await getPrincipal(request);
   if (!principal) return { response: json({ error: 'Sign-in is required.' }, 401) };
@@ -282,6 +290,28 @@ function cleanProfile(body) {
   };
 }
 
+const PROVIDER_TYPES = ['psychiatrist', 'psychologist', 'therapist', 'counsellor', 'other'];
+const PROVIDER_STATUSES = ['pending_review', 'verified', 'rejected', 'suspended'];
+
+function cleanProvider(body) {
+  const email = cleanText(body.email, 160).toLowerCase();
+  const professionalType = cleanText(body.professionalType, 40).toLowerCase();
+  return {
+    fullName: cleanText(body.fullName, 120),
+    email,
+    phone: cleanText(body.phone, 30),
+    professionalType: PROVIDER_TYPES.includes(professionalType) ? professionalType : 'other',
+    registrationNumber: cleanText(body.registrationNumber, 80),
+    registrationCouncil: cleanText(body.registrationCouncil, 120),
+    qualifications: cleanText(body.qualifications, 240),
+    specializations: cleanText(body.specializations, 240),
+  };
+}
+
+function isValidProvider(provider) {
+  return provider.fullName && provider.email.includes('@') && provider.registrationNumber && provider.registrationCouncil && provider.qualifications;
+}
+
 function validateBooking(body) {
   const booking = {
     fullName: cleanText(body.fullName, 120),
@@ -476,8 +506,14 @@ app.http('clinicianAccess', {
   handler: async (request) => {
     const principal = await getPrincipal(request);
     if (!principal) return json({ error: 'Sign-in is required.' }, 401);
-    if (!isClinician(principal)) return json({ error: 'Clinician access is required.' }, 403);
-    return json({ clinician: { email: principal.userDetails, name: 'Dr. Medha', registrationNumber: 'KMC: 143480' } });
+    if (isClinician(principal)) return json({ clinician: { email: principal.userDetails, name: 'Dr. Medha', registrationNumber: 'KMC: 143480' } });
+    try {
+      const provider = await readProviderByEmail(principal.userDetails);
+      if (!provider || provider.status !== 'verified') return json({ error: 'Verified clinician access is required.' }, 403);
+      return json({ clinician: provider });
+    } catch (error) {
+      return json({ error: error.message === 'Cosmos DB is not configured.' ? 'Provider access is not configured yet.' : 'Could not verify clinician access.' }, 503);
+    }
   },
 });
 
@@ -507,6 +543,63 @@ app.http('workspaceAvailability', {
       await container('availability').items.upsert(availability);
       return json({ availability });
     } catch (error) {
+      return handleServerError(context, error);
+    }
+  },
+});
+
+app.http('providers', {
+  methods: ['GET', 'POST'],
+  authLevel: 'anonymous',
+  route: 'providers',
+  handler: async (request, context) => {
+    const principal = await getPrincipal(request);
+    if (!principal || !isAdmin(principal)) return json({ error: 'Admin access is required.' }, 403);
+    try {
+      const providers = container('providers');
+      if (request.method === 'GET') {
+        const { resources } = await providers.items.query('SELECT * FROM c ORDER BY c.createdAt DESC').fetchAll();
+        return json({ providers: resources });
+      }
+      const provider = cleanProvider(await request.json());
+      if (!isValidProvider(provider)) return json({ error: 'Name, email, registration details, and qualifications are required.' }, 400);
+      const existing = await readProviderByEmail(provider.email);
+      if (existing) return json({ error: 'A provider with this email already exists.' }, 409);
+      const now = new Date().toISOString();
+      const record = {
+        id: crypto.randomUUID(),
+        ...provider,
+        status: 'pending_review',
+        createdBy: principal.userId,
+        createdAt: now,
+        updatedAt: now,
+      };
+      await providers.items.create(record);
+      return json({ provider: record }, 201);
+    } catch (error) {
+      return handleServerError(context, error);
+    }
+  },
+});
+
+app.http('providerStatus', {
+  methods: ['PATCH'],
+  authLevel: 'anonymous',
+  route: 'providers/{id}/status',
+  handler: async (request, context) => {
+    const principal = await getPrincipal(request);
+    if (!principal || !isAdmin(principal)) return json({ error: 'Admin access is required.' }, 403);
+    try {
+      const status = cleanText((await request.json()).status, 30);
+      if (!PROVIDER_STATUSES.includes(status)) return json({ error: 'Invalid provider status.' }, 400);
+      const providers = container('providers');
+      const { resource } = await providers.item(request.params.id, request.params.id).read();
+      if (!resource) return json({ error: 'Provider not found.' }, 404);
+      const provider = { ...resource, status, updatedAt: new Date().toISOString(), reviewedBy: principal.userId };
+      await providers.items.upsert(provider);
+      return json({ provider });
+    } catch (error) {
+      if (error.code === 404) return json({ error: 'Provider not found.' }, 404);
       return handleServerError(context, error);
     }
   },
