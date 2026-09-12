@@ -1,7 +1,7 @@
 import { http, HttpResponse } from 'msw';
 import { doctor } from '../constants';
-import { getPrincipal, requireAdmin, requireAuth, requireClinician } from './auth';
-import { addMockProvider, mockAssessments, mockAvailability, mockBookings, mockProfile, mockProviders, reservedSlotKeys, updateAvailability, updateMockProviderStatus, updateProfile } from './data';
+import { getPrincipal, getRoles, isVerifiedProvider, requireAdmin, requireAuth, requireClinician } from './auth';
+import { addMockProvider, mockAssessments, mockAvailability, mockBookings, mockProfile, mockProviders, mockReservations, reservedSlotKeys, updateAvailability, updateMockProviderStatus, updateProfile } from './data';
 import { generateSlots } from './slots';
 
 const DAY_KEYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
@@ -93,7 +93,7 @@ function scoreAssessment(type, responses) {
 
 export const handlers = [
   http.get('/api/availability', () => {
-    const slots = generateSlots(mockAvailability);
+    const slots = generateSlots(mockAvailability).filter((slot) => !reservedSlotKeys.has(slot.slotKey));
     return HttpResponse.json({
       enabled: mockAvailability.enabled,
       timezone: mockAvailability.timezone,
@@ -104,9 +104,10 @@ export const handlers = [
 
   http.get('/api/me', ({ request }) => {
     const principal = getPrincipal(request);
+    const roles = getRoles(principal);
     return HttpResponse.json({
       authenticated: Boolean(principal),
-      user: principal ? { id: principal.userId, email: principal.email, provider: 'google.com' } : null,
+      user: principal ? { id: principal.userId, email: principal.email, provider: 'google.com', roles } : null,
     });
   }),
 
@@ -171,9 +172,9 @@ export const handlers = [
   http.get('/api/clinician/access', ({ request }) => {
     const principal = getPrincipal(request);
     if (!principal) return HttpResponse.json({ error: 'Sign-in is required.' }, { status: 401 });
-    const provider = mockProviders.find((item) => item.email === principal.email.toLowerCase() && item.status === 'verified');
     const auth = requireClinician(request);
-    if (auth.response && !provider) return HttpResponse.json(auth.response, { status: auth.status });
+    if (auth.response) return HttpResponse.json(auth.response, { status: auth.status });
+    const provider = isVerifiedProvider(principal) ? mockProviders.find((item) => item.email === principal.email.toLowerCase() && item.status === 'verified') : null;
     return HttpResponse.json({
       clinician: provider || { email: auth.principal.email, name: doctor.name, registrationNumber: 'KMC: 143480' },
     });
@@ -209,7 +210,7 @@ export const handlers = [
       return HttpResponse.json({ error: 'Booking contact consent is required.' }, { status: 400 });
     }
     if (principal && (body.consentGiven !== true || body.consentVersion !== 'account-storage-v1')) {
-      return HttpResponse.json({ error: 'Account storage consent is required.' }, { status: 400 });
+      return HttpResponse.json({ error: 'To save this booking to your signed-in account, please confirm account storage consent and submit again.' }, { status: 400 });
     }
     const booking = validateBooking(body);
     if (!booking) {
@@ -218,17 +219,24 @@ export const handlers = [
 
     const slots = generateSlots(mockAvailability);
     const slotKey = `${booking.preferredDate}|${booking.preferredTime}`;
+    const userId = principal?.userId || 'guest';
+    const idempotencyKey = String(body.idempotencyKey || '').slice(0, 100);
+    const existing = mockBookings.find((item) => item.slotKey === slotKey && ((idempotencyKey && item.idempotencyKey === idempotencyKey) || (userId !== 'guest' && item.userId === userId)));
+    if (existing) {
+      return HttpResponse.json({ booking: { id: existing.id, status: existing.status, meetingStatus: existing.meetingStatus, meetingUrl: existing.meetingUrl, calendarAddUrl: existing.calendarAddUrl, meetingStartAt: null, notificationStatus: existing.notificationStatus }, duplicate: true, message: 'This booking request was already received.' });
+    }
     if (!mockAvailability.enabled || !slots.some((slot) => slot.slotKey === slotKey)) {
       return HttpResponse.json({ error: 'That time is not currently available. Please choose another slot.' }, { status: 409 });
     }
     if (reservedSlotKeys.has(slotKey)) {
-      return HttpResponse.json({ error: 'That slot has just been requested by someone else. Please choose another slot.' }, { status: 409 });
+        return HttpResponse.json({ error: 'That slot has just been requested by someone else. Please choose another slot.' }, { status: 409 });
     }
 
     reservedSlotKeys.add(slotKey);
     const record = {
       id: crypto.randomUUID(),
-      userId: principal?.userId || 'guest',
+      userId,
+      idempotencyKey,
       isGuest: !principal,
       slotKey,
       ...booking,
@@ -241,6 +249,7 @@ export const handlers = [
       updatedAt: new Date().toISOString(),
     };
     mockBookings.push(record);
+    mockReservations.set(slotKey, { bookingId: record.id, userId, idempotencyKey });
     return HttpResponse.json({
       booking: {
         id: record.id,
@@ -253,6 +262,19 @@ export const handlers = [
       },
       message: 'Your booking request has been received.',
     }, { status: 201 });
+  }),
+
+  http.post('/api/prescriptions', async ({ request }) => {
+    const clinician = requireClinician(request);
+    const admin = requireAdmin(request);
+    if (clinician.response && admin.response) return HttpResponse.json({ error: 'Verified clinician access is required.' }, { status: 403 });
+    const body = await request.json();
+    const patient = body.patient || {};
+    const medicines = Array.isArray(body.medicines) ? body.medicines : [];
+    if (!patient.name || !Number.isInteger(Number(patient.age)) || Number(patient.age) < 18 || !body.date || !medicines.length || medicines.some((medicine) => Object.values(medicine).some((value) => !String(value || '').trim()))) {
+      return HttpResponse.json({ error: 'Patient details and complete medicine fields are required.' }, { status: 400 });
+    }
+    return HttpResponse.json({ prescription: { id: crypto.randomUUID(), createdAt: new Date().toISOString() } }, { status: 201 });
   }),
 
   http.get('/api/assessments', ({ request }) => {

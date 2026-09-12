@@ -39,10 +39,6 @@ export function CrisisBanner() {
           </a>
         </li>
       </ul>
-      <p className="mt-3 text-xs text-neutral-slate">
-        Please verify these contact details before launch; helpline numbers can
-        change.
-      </p>
     </div>
   );
 }

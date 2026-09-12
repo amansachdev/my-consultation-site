@@ -1,3 +1,5 @@
+import { mockProviders } from './data';
+
 const ADMIN_EMAILS = new Set(
   (import.meta.env.VITE_ADMIN_EMAILS || 'sachdevaman7@gmail.com,10medha@gmail.com,antaran.health@gmail.com')
     .split(',')
@@ -57,8 +59,27 @@ export function requireAdmin(request) {
 export function requireClinician(request) {
   const auth = requireAuth(request);
   if (auth.response) return auth;
-  if (!CLINICIAN_EMAILS.has(auth.principal.email.toLowerCase())) {
+  if (!isClinicianPrincipal(auth.principal)) {
     return { response: { error: 'Clinician access is required.' }, status: 403 };
   }
   return auth;
+}
+
+export function isVerifiedProvider(principal) {
+  return Boolean(principal && mockProviders.some((provider) => (
+    provider.email === principal.email.toLowerCase() && provider.status === 'verified'
+  )));
+}
+
+function isClinicianPrincipal(principal) {
+  return CLINICIAN_EMAILS.has(principal.email.toLowerCase()) || isVerifiedProvider(principal);
+}
+
+export function getRoles(principal) {
+  if (!principal) return [];
+  const email = principal.email.toLowerCase();
+  return [
+    ...(ADMIN_EMAILS.has(email) ? ['admin'] : []),
+    ...(isClinicianPrincipal(principal) ? ['clinician'] : []),
+  ];
 }

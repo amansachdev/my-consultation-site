@@ -37,12 +37,45 @@ let firebaseAuth;
 let googleAccessToken;
 let googleAccessTokenExpiresAt = 0;
 
-function json(body, status = 200) {
+const FOUNDER_CLINICIAN = { name: 'Dr. Medha', registrationNumber: 'KMC: 143480' };
+const RATE_LIMIT_WINDOW_MS = 10 * 60 * 1000;
+const RATE_LIMIT_MAX_TRACKED_KEYS = 5000;
+const rateLimitBuckets = new Map();
+
+function json(body, status = 200, headers = {}) {
   return {
     status,
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...headers },
     jsonBody: body,
   };
+}
+
+function getClientIp(request) {
+  const forwarded = (request.headers.get('x-forwarded-for') || '').split(',')[0].trim();
+  return forwarded || request.headers.get('x-azure-clientip') || 'unknown';
+}
+
+function pruneRateLimitBuckets(now) {
+  if (rateLimitBuckets.size <= RATE_LIMIT_MAX_TRACKED_KEYS) return;
+  for (const [key, bucket] of rateLimitBuckets) {
+    if (now - bucket.windowStart >= RATE_LIMIT_WINDOW_MS) rateLimitBuckets.delete(key);
+  }
+  if (rateLimitBuckets.size > RATE_LIMIT_MAX_TRACKED_KEYS) rateLimitBuckets.clear();
+}
+
+function rateLimit(request, scope, limit) {
+  const now = Date.now();
+  pruneRateLimitBuckets(now);
+  const key = `${scope}|${getClientIp(request)}`;
+  const bucket = rateLimitBuckets.get(key);
+  if (!bucket || now - bucket.windowStart >= RATE_LIMIT_WINDOW_MS) {
+    rateLimitBuckets.set(key, { windowStart: now, count: 1 });
+    return null;
+  }
+  bucket.count += 1;
+  if (bucket.count <= limit) return null;
+  const retryAfter = Math.max(1, Math.ceil((bucket.windowStart + RATE_LIMIT_WINDOW_MS - now) / 1000));
+  return json({ error: 'Too many requests. Please wait a few minutes and try again.' }, 429, { 'Retry-After': String(retryAfter) });
 }
 
 function getFirebaseAuth() {
@@ -184,20 +217,24 @@ function formatDate(date) {
   return date.toISOString().slice(0, 10);
 }
 
-function getSlotsForDate(availability, date) {
+function getSlotsForDate(availability, date, reservedKeys) {
   if (!availability.enabled || availability.blockedDates.includes(date)) return [];
   const weekday = new Intl.DateTimeFormat('en-US', { timeZone: AVAILABILITY_TIMEZONE, weekday: 'long' }).format(date).toLowerCase();
   const ranges = availability.weekly[weekday] || [];
   const now = istDateParts();
+  const todayString = `${now.year}-${now.month}-${now.day}`;
+  const nowTime = `${now.hour}:${now.minute}`;
+  const dateString = formatDate(date);
   const slots = [];
   for (const range of ranges) {
     let cursor = range.start;
     while (cursor < range.end) {
       const nextMinutes = Number(cursor.slice(0, 2)) * 60 + Number(cursor.slice(3)) + availability.durationMinutes;
       if (nextMinutes > 24 * 60 || nextMinutes > Number(range.end.slice(0, 2)) * 60 + Number(range.end.slice(3))) break;
-      const slotKey = `${formatDate(date)}|${cursor}`;
-      if (!(date === `${now.year}-${now.month}-${now.day}` && cursor <= `${now.hour}:${now.minute}`) && !availability.blockedSlots.includes(slotKey)) {
-        slots.push({ date: formatDate(date), time: cursor, slotKey });
+      const slotKey = `${dateString}|${cursor}`;
+      const isPast = dateString === todayString && cursor <= nowTime;
+      if (!isPast && !availability.blockedSlots.includes(slotKey) && !reservedKeys.has(slotKey)) {
+        slots.push({ date: dateString, time: cursor, slotKey });
       }
       const hours = String(Math.floor(nextMinutes / 60)).padStart(2, '0');
       const minutes = String(nextMinutes % 60).padStart(2, '0');
@@ -207,14 +244,35 @@ function getSlotsForDate(availability, date) {
   return slots;
 }
 
-async function getAvailableSlots() {
+async function readReservedSlotKeys(fromDate, toDate, context) {
+  try {
+    const { resources } = await container('slotReservations').items.query({
+      query: 'SELECT c.slotKey FROM c WHERE c.slotKey >= @from AND c.slotKey <= @to',
+      parameters: [
+        { name: '@from', value: `${fromDate}|` },
+        { name: '@to', value: `${toDate}|~` },
+      ],
+    }).fetchAll();
+    return new Set(resources.map((item) => item.slotKey).filter(Boolean));
+  } catch (error) {
+    if (error.code === 404) return new Set();
+    context?.warn('Reserved slot lookup failed; availability may show slots that are already requested.');
+    return new Set();
+  }
+}
+
+async function getAvailableSlots(context) {
   const availability = await readAvailability();
+  const todayParts = istDateParts();
+  const today = dateFromParts(todayParts.year, todayParts.month, todayParts.day);
+  const lastDay = new Date(today);
+  lastDay.setUTCDate(today.getUTCDate() + AVAILABILITY_HORIZON_DAYS - 1);
+  const reservedKeys = await readReservedSlotKeys(formatDate(today), formatDate(lastDay), context);
   const slots = [];
-  const today = dateFromParts(istDateParts().year, istDateParts().month, istDateParts().day);
   for (let offset = 0; offset < AVAILABILITY_HORIZON_DAYS; offset += 1) {
     const date = new Date(today);
     date.setUTCDate(today.getUTCDate() + offset);
-    slots.push(...getSlotsForDate(availability, date));
+    slots.push(...getSlotsForDate(availability, date, reservedKeys));
   }
   return { availability, slots };
 }
@@ -310,6 +368,60 @@ function cleanProvider(body) {
 
 function isValidProvider(provider) {
   return provider.fullName && provider.email.includes('@') && provider.registrationNumber && provider.registrationCouncil && provider.qualifications;
+}
+
+async function readVerifiedProvider(principal) {
+  const provider = await readProviderByEmail(principal.userDetails);
+  return provider?.status === 'verified' ? provider : null;
+}
+
+async function canAccessClinicianTools(principal) {
+  return isClinician(principal) || isAdmin(principal) || Boolean(await readVerifiedProvider(principal));
+}
+
+const PRESCRIPTION_MEDICINE_FIELDS = ['name', 'strength', 'dose', 'frequency', 'duration', 'instructions'];
+const PRESCRIPTION_MEDICINE_LIMITS = { name: 120, strength: 60, dose: 60, frequency: 80, duration: 60, instructions: 240 };
+let prescriptionsContainer;
+
+async function prescriptionStore() {
+  if (prescriptionsContainer) return prescriptionsContainer;
+  const { container: store } = await getDatabase().containers.createIfNotExists({ id: 'prescriptions', partitionKey: '/id' });
+  prescriptionsContainer = store;
+  return prescriptionsContainer;
+}
+
+function cleanPrescription(body) {
+  const source = body || {};
+  const patientName = cleanText(source.patient?.name, 120);
+  const age = Number(source.patient?.age);
+  const prescribedFor = cleanText(source.date, 10);
+  const medicines = Array.isArray(source.medicines) ? source.medicines.slice(0, 20) : [];
+  const cleanedMedicines = medicines.map((medicine) => Object.fromEntries(
+    PRESCRIPTION_MEDICINE_FIELDS.map((field) => [field, cleanText(medicine?.[field], PRESCRIPTION_MEDICINE_LIMITS[field])]),
+  ));
+  const complete = cleanedMedicines.every((medicine) => PRESCRIPTION_MEDICINE_FIELDS.every((field) => medicine[field]));
+  if (!patientName || !Number.isInteger(age) || age < 18 || age > 120 || !/^\d{4}-\d{2}-\d{2}$/.test(prescribedFor) || cleanedMedicines.length === 0 || !complete) return null;
+  return { patientName, patientAge: age, prescribedFor, medicines: cleanedMedicines };
+}
+
+function bookingResponsePayload(record) {
+  return {
+    id: record.id,
+    status: record.status,
+    meetingStatus: record.meetingStatus,
+    meetingUrl: record.meetingUrl || null,
+    calendarAddUrl: record.calendarAddUrl || null,
+    meetingStartAt: record.meetingStartAt || null,
+    notificationStatus: record.notificationStatus,
+  };
+}
+
+async function readBookingById(bookingId) {
+  const { resources } = await container('bookingRequests').items.query({
+    query: 'SELECT TOP 1 * FROM c WHERE c.id = @id',
+    parameters: [{ name: '@id', value: bookingId }],
+  }).fetchAll();
+  return resources[0] || null;
 }
 
 function validateBooking(body) {
@@ -426,10 +538,10 @@ async function getGoogleAccessToken() {
   return googleAccessToken;
 }
 
-function getMeetingTimes(booking) {
+function getMeetingTimes(booking, durationMinutes) {
   const start = new Date(`${booking.preferredDate}T${booking.preferredTime}:00+05:30`);
   if (Number.isNaN(start.getTime())) return null;
-  const end = new Date(start.getTime() + 60 * 60 * 1000);
+  const end = new Date(start.getTime() + durationMinutes * 60 * 1000);
   return { start: start.toISOString(), end: end.toISOString() };
 }
 
@@ -444,10 +556,10 @@ function getCalendarAddUrl(booking, times, meetingUrl) {
   return url.toString();
 }
 
-async function createGoogleMeeting(booking) {
+async function createGoogleMeeting(booking, durationMinutes) {
   const accessToken = await getGoogleAccessToken();
   if (!accessToken) return { meetingStatus: 'not_configured' };
-  const times = getMeetingTimes(booking);
+  const times = getMeetingTimes(booking, durationMinutes);
   if (!times) throw new Error('Booking date or time is invalid for Google Calendar.');
   const response = await fetch(`https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(GOOGLE_CALENDAR_ID)}/events?conferenceDataVersion=1&sendUpdates=all`, {
     method: 'POST',
@@ -474,7 +586,22 @@ app.http('me', {
   route: 'me',
   handler: async (request) => {
     const principal = await getPrincipal(request);
-    return json({ authenticated: Boolean(principal), user: principal ? { id: principal.userId, email: principal.userDetails, provider: principal.identityProvider } : null });
+    if (!principal) return json({ authenticated: false, user: null });
+    const roles = [];
+    if (isAdmin(principal)) roles.push('admin');
+    if (isClinician(principal)) {
+      roles.push('clinician');
+    } else {
+      try {
+        if (await readVerifiedProvider(principal)) roles.push('clinician');
+      } catch {
+        // Role enrichment must not make the identity endpoint unavailable.
+      }
+    }
+    return json({
+      authenticated: true,
+      user: { id: principal.userId, email: principal.userDetails, provider: principal.identityProvider, roles },
+    });
   },
 });
 
@@ -506,11 +633,13 @@ app.http('clinicianAccess', {
   handler: async (request) => {
     const principal = await getPrincipal(request);
     if (!principal) return json({ error: 'Sign-in is required.' }, 401);
-    if (isClinician(principal)) return json({ clinician: { email: principal.userDetails, name: 'Dr. Medha', registrationNumber: 'KMC: 143480' } });
+    if (isClinician(principal)) {
+      return json({ clinician: { email: principal.userDetails, name: FOUNDER_CLINICIAN.name, registrationNumber: FOUNDER_CLINICIAN.registrationNumber } });
+    }
     try {
-      const provider = await readProviderByEmail(principal.userDetails);
-      if (!provider || provider.status !== 'verified') return json({ error: 'Verified clinician access is required.' }, 403);
-      return json({ clinician: provider });
+      const provider = await readVerifiedProvider(principal);
+      if (provider) return json({ clinician: provider });
+      return json({ error: 'Verified clinician access is required.' }, 403);
     } catch (error) {
       return json({ error: error.message === 'Cosmos DB is not configured.' ? 'Provider access is not configured yet.' : 'Could not verify clinician access.' }, 503);
     }
@@ -611,7 +740,7 @@ app.http('publicAvailability', {
   route: 'availability',
   handler: async (request, context) => {
     try {
-      const { availability, slots } = await getAvailableSlots();
+      const { availability, slots } = await getAvailableSlots(context);
       return json({ enabled: availability.enabled, timezone: availability.timezone, durationMinutes: availability.durationMinutes, slots });
     } catch (error) {
       return handleServerError(context, error);
@@ -632,6 +761,8 @@ app.http('paymentOrder', {
   route: 'payments/order',
   handler: async (request, context) => {
     if (!PAYMENTS_ENABLED) return json({ error: 'Payments are currently disabled.' }, 404);
+    const limited = rateLimit(request, 'payments-order', 10);
+    if (limited) return limited;
     try {
       const order = await razorpayRequest('/orders', {
         amount: RAZORPAY_TEST_AMOUNT_PAISE,
@@ -652,6 +783,8 @@ app.http('paymentVerify', {
   route: 'payments/verify',
   handler: async (request) => {
     if (!PAYMENTS_ENABLED) return json({ error: 'Payments are currently disabled.' }, 404);
+    const limited = rateLimit(request, 'payments-verify', 20);
+    if (limited) return limited;
     const body = await request.json();
     const orderId = cleanText(body.orderId, 80);
     const paymentId = cleanText(body.paymentId, 80);
@@ -681,6 +814,10 @@ app.http('bookings', {
   route: 'bookings',
   handler: async (request, context) => {
     const principal = await getPrincipal(request);
+    if (request.method === 'POST') {
+      const limited = rateLimit(request, 'bookings', 5);
+      if (limited) return limited;
+    }
     try {
       const bookings = container('bookingRequests');
       if (request.method === 'GET') {
@@ -690,26 +827,48 @@ app.http('bookings', {
       }
       const body = await request.json();
       if (body.bookingConsentGiven !== true || body.bookingConsentVersion !== BOOKING_CONSENT_VERSION) return json({ error: 'Booking contact consent is required.' }, 400);
-      if (principal && (body.consentGiven !== true || body.consentVersion !== ACCOUNT_CONSENT_VERSION)) return json({ error: 'Account storage consent is required.' }, 400);
+      if (principal && (body.consentGiven !== true || body.consentVersion !== ACCOUNT_CONSENT_VERSION)) return json({ error: 'To save this booking to your signed-in account, please confirm account storage consent and submit again.' }, 400);
       const booking = validateBooking(body);
       if (!booking) return json({ error: 'Please complete the required booking fields.' }, 400);
-      const { availability, slots } = await getAvailableSlots();
       const slotKey = `${booking.preferredDate}|${booking.preferredTime}`;
-      if (!availability.enabled || !slots.some((slot) => slot.slotKey === slotKey)) return json({ error: 'That time is not currently available. Please choose another slot.' }, 409);
       const userId = principal?.userId || 'guest';
+      const idempotencyKey = cleanText(body.idempotencyKey, 100);
+      const existingReservation = await readUserItem('slotReservations', slotKey);
+      if (existingReservation) {
+        const ownsReservation = (idempotencyKey && existingReservation.idempotencyKey === idempotencyKey)
+          || (userId !== 'guest' && existingReservation.userId === userId);
+        if (ownsReservation) {
+          const existingBooking = await readBookingById(existingReservation.bookingId);
+          if (existingBooking) {
+            return json({ booking: bookingResponsePayload(existingBooking), duplicate: true, message: 'This booking request was already received.' });
+          }
+          return json({ error: 'Your previous booking request is still being processed. Please try again shortly.' }, 409);
+        }
+        return json({ error: 'That slot has just been requested by someone else. Please choose another slot.' }, 409);
+      }
+      const { availability, slots } = await getAvailableSlots(context);
+      if (!availability.enabled || !slots.some((slot) => slot.slotKey === slotKey)) return json({ error: 'That time is not currently available. Please choose another slot.' }, 409);
       const record = { id: crypto.randomUUID(), userId, isGuest: !principal, slotKey, ...booking, status: 'requested', meetingStatus: 'pending', notificationStatus: 'pending', bookingConsentVersion: BOOKING_CONSENT_VERSION, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       try {
-        await container('slotReservations').items.create({ id: slotKey, slotKey, bookingId: record.id, createdAt: record.createdAt });
+        await container('slotReservations').items.create({ id: slotKey, slotKey, bookingId: record.id, userId, idempotencyKey, createdAt: record.createdAt });
         if (principal) await recordConsent(principal.userId, ACCOUNT_CONSENT_VERSION);
         await bookings.items.create(record);
       } catch (error) {
-        if (error.code === 409) return json({ error: 'That slot has just been requested by someone else. Please choose another slot.' }, 409);
+        if (error.code === 409) {
+          const reservation = await readUserItem('slotReservations', slotKey);
+          const ownsReservation = reservation && ((idempotencyKey && reservation.idempotencyKey === idempotencyKey) || (userId !== 'guest' && reservation.userId === userId));
+          if (ownsReservation) {
+            const existingBooking = await readBookingById(reservation.bookingId);
+            if (existingBooking) return json({ booking: bookingResponsePayload(existingBooking), duplicate: true, message: 'This booking request was already received.' });
+          }
+          return json({ error: 'That slot has just been requested by someone else. Please choose another slot.' }, 409);
+        }
         try { await container('slotReservations').item(slotKey, slotKey).delete(); } catch { /* Keep the original booking error. */ }
         throw error;
       }
       let meetingStatus = 'failed';
       try {
-        const meeting = await createGoogleMeeting(record);
+        const meeting = await createGoogleMeeting(record, availability.durationMinutes);
         meetingStatus = meeting.meetingStatus;
         if (meetingStatus === 'created') Object.assign(record, meeting);
       } catch (error) { context.warn(`Booking ${record.id} was saved but meeting creation failed.`); }
@@ -719,7 +878,33 @@ app.http('bookings', {
       record.notificationStatus = notificationStatus;
       record.updatedAt = new Date().toISOString();
       await bookings.items.upsert(record);
-      return json({ booking: { id: record.id, status: record.status, meetingStatus, meetingUrl: record.meetingUrl || null, calendarAddUrl: record.calendarAddUrl || null, meetingStartAt: record.meetingStartAt || null, notificationStatus }, message: 'Your booking request has been received.' }, 201);
+      return json({ booking: bookingResponsePayload(record), message: 'Your booking request has been received.' }, 201);
+    } catch (error) {
+      return handleServerError(context, error);
+    }
+  },
+});
+
+app.http('prescriptions', {
+  methods: ['POST'],
+  authLevel: 'anonymous',
+  route: 'prescriptions',
+  handler: async (request, context) => {
+    const auth = await requirePrincipal(request);
+    if (auth.response) return auth.response;
+    try {
+      if (!await canAccessClinicianTools(auth.principal)) return json({ error: 'Verified clinician access is required.' }, 403);
+      const prescription = cleanPrescription(await request.json());
+      if (!prescription) return json({ error: 'Patient details and complete medicine fields are required.' }, 400);
+      const record = {
+        id: crypto.randomUUID(),
+        ...prescription,
+        clinicianUserId: auth.principal.userId,
+        clinicianEmail: auth.principal.userDetails,
+        createdAt: new Date().toISOString(),
+      };
+      await (await prescriptionStore()).items.create(record);
+      return json({ prescription: { id: record.id, createdAt: record.createdAt } }, 201);
     } catch (error) {
       return handleServerError(context, error);
     }

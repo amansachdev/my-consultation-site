@@ -27,9 +27,9 @@ export function Layout({ children }) {
 
 function Header() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const { isAuthenticated, status, signIn, signOut, user } = useAuth();
-  const isClinician = isAuthenticated && user?.email?.toLowerCase() === doctor.email.toLowerCase();
-  const isAdmin = isAuthenticated && adminEmails.includes(user?.email?.toLowerCase());
+  const { isAuthenticated, status, signIn, signOut, user, roles } = useAuth();
+  const isClinician = isAuthenticated && roles.includes('clinician');
+  const isAdmin = isAuthenticated && roles.includes('admin');
 
   return (
     <header className="sticky top-0 z-50 border-b border-line bg-mist/90 backdrop-blur">
@@ -211,6 +211,10 @@ function Footer() {
         <p className="text-center text-xs text-white/40">
           © {new Date().getFullYear()} {brand.name}. All rights reserved.
         </p>
+        <div className="flex justify-center gap-5 text-xs text-white/60">
+          <Link className="hover:text-white" to="/privacy">Privacy policy</Link>
+          <Link className="hover:text-white" to="/terms">Terms of use</Link>
+        </div>
       </div>
     </footer>
   );

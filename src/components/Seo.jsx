@@ -35,6 +35,14 @@ const pageMetadata = {
     title: 'Prepare for an Online Psychiatric Consultation | Antaran',
     description: 'Use Antaran’s simple checklist to prepare for an online psychiatric consultation, from privacy and technology to useful health information.',
   },
+  '/privacy': {
+    title: 'Privacy Policy | Antaran',
+    description: 'Draft privacy policy for Antaran Mental Healthcare. Pending legal review.',
+  },
+  '/terms': {
+    title: 'Terms of Use | Antaran',
+    description: 'Draft terms of use for Antaran Mental Healthcare. Pending legal review.',
+  },
   '/account': {
     title: 'Your Antaran Account',
     description: 'View your Antaran profile, booking history, and saved assessments.',

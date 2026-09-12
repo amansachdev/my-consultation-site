@@ -78,3 +78,4 @@ export const mockAssessments = [
 ];
 
 export const reservedSlotKeys = new Set();
+export const mockReservations = new Map();

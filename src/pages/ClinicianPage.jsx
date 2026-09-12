@@ -96,6 +96,7 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
   const [medicines, setMedicines] = useState([blankMedicine()]);
   const [error, setError] = useState('');
+  const [recordState, setRecordState] = useState('idle');
 
   useEffect(() => {
     if (status === 'loading') return;
@@ -117,6 +118,10 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
   const filename = `antaran-prescription-${patient.name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'patient'}-${date}.pdf`;
   const pdfDocument = useMemo(() => <PrescriptionDocument patient={patient} medicines={medicines} date={date} />, [date, medicines, patient]);
   const isValid = patient.name.trim() && Number(patient.age) >= 18 && Number(patient.age) <= 120 && date && medicines.every((medicine) => Object.values(medicine).every((value) => value.trim()));
+
+  useEffect(() => {
+    setRecordState('idle');
+  }, [date, medicines, patient]);
 
   if (status === 'loading' || access === 'checking') {
     const loader = <LoadingState text="Checking clinician access..." />;
@@ -142,6 +147,14 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
       return;
     }
     setError('');
+    if (recordState === 'saved' || recordState === 'saving') return;
+    setRecordState('saving');
+    apiRequest('/prescriptions', {
+      method: 'POST',
+      body: JSON.stringify({ patient, medicines, date }),
+    })
+      .then(() => setRecordState('saved'))
+      .catch(() => setRecordState('failed'));
   };
 
   const content = (
@@ -167,6 +180,8 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
           ))}
         </div>
         {error && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{error}</p>}
+        {recordState === 'saved' && <p className="text-sm text-semantic-success" role="status">Prescription record saved.</p>}
+        {recordState === 'failed' && <p className="text-sm text-semantic-warning" role="status">PDF downloaded, but the clinical record could not be saved. Please notify the administrator.</p>}
         <PDFDownloadLink document={pdfDocument} fileName={filename} onClick={validateDownload} className="btn-primary justify-center sm:justify-self-start">
           {({ loading }) => <><FileDown size={17} /> {loading ? 'Preparing PDF...' : 'Download prescription PDF'}</>}
         </PDFDownloadLink>
@@ -183,7 +198,7 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
       <div className="section-heading text-left">
         <p className="eyebrow">{accessLabel} workspace</p>
         <h1>Prepare a prescription.</h1>
-        <p>Enter the patient and medicine details manually. The document is generated locally and is not saved to Antaran.</p>
+        <p>Enter the patient and medicine details manually. The PDF is generated locally, while a clinical record is saved to Antaran.</p>
       </div>
       {content}
     </ClinicianShell>

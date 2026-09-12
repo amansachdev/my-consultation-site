@@ -8,6 +8,12 @@ import '@mantine/core/styles.css';
 import '@mantine/dates/styles.css';
 import './styles.css';
 
+const redirect = window.sessionStorage.getItem('spa-redirect');
+if (redirect) {
+  window.sessionStorage.removeItem('spa-redirect');
+  if (redirect !== window.location.href) window.history.replaceState(null, document.title, redirect);
+}
+
 async function enableMocking() {
   if (import.meta.env.VITE_ENABLE_MSW !== 'true') return;
   const { worker } = await import('./mocks/browser');

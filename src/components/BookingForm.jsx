@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ArrowRight, Mail, MapPin, Phone } from 'lucide-react';
 import { MantineTimePicker } from './MantineTimePicker';
 import { consultationTypes, doctor } from '../constants';
@@ -7,6 +7,10 @@ import { apiRequest } from '../lib/api';
 
 const CONSULTATION_TYPE = consultationTypes[0]?.title || 'Psychiatric Consultation';
 
+function createIdempotencyKey() {
+  return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+}
+
 export function BookingForm() {
   const { isAuthenticated } = useAuth();
 
@@ -14,6 +18,7 @@ export function BookingForm() {
   const [touched, setTouched] = useState({});
   const [submitError, setSubmitError] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [bookingResult, setBookingResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [bookingConsentGiven, setBookingConsentGiven] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
@@ -21,6 +26,7 @@ export function BookingForm() {
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const idempotencyKey = useRef(createIdempotencyKey());
 
   const todayString = useMemo(() => {
     const now = new Date();
@@ -78,6 +84,10 @@ export function BookingForm() {
       setSubmitError('Please confirm that Antaran may use these details to contact you about this booking request.');
       return;
     }
+    if (isAuthenticated && !consentGiven) {
+      setSubmitError('Please confirm that Antaran may save this booking to your signed-in account.');
+      return;
+    }
     submitBooking(data, form);
   };
 
@@ -85,7 +95,7 @@ export function BookingForm() {
     setSubmitting(true);
     setSubmitError('');
     try {
-      await apiRequest('/bookings', {
+      const response = await apiRequest('/bookings', {
         method: 'POST',
         body: JSON.stringify({
           fullName: data.name,
@@ -98,10 +108,14 @@ export function BookingForm() {
           message: data.message || '',
           bookingConsentGiven,
           bookingConsentVersion: 'booking-contact-v1',
-          consentGiven,
-          consentVersion: 'account-storage-v1',
-        }),
-      });
+           consentGiven,
+           consentVersion: 'account-storage-v1',
+           idempotencyKey: idempotencyKey.current,
+         }),
+       });
+      setBookingResult(response.booking || null);
+      idempotencyKey.current = createIdempotencyKey();
+      apiRequest('/availability').then(setAvailability).catch(() => {});
       form.reset();
       setErrors({});
       setTouched({});
@@ -157,7 +171,20 @@ export function BookingForm() {
             <p className="eyebrow">Request received</p>
             <h2 className="font-serif text-3xl font-semibold">We have your request.</h2>
             <p className="leading-7 text-ink/70">The clinic team will review your preferred time and contact you to confirm availability.</p>
-            <p className="leading-7 text-ink/70">Your booking details and meeting information have been sent to your email. The meeting link will be available to join 15 minutes before the consultation.</p>
+            {bookingResult?.meetingStatus === 'created' && bookingResult.meetingUrl ? (
+              <p className="leading-7 text-ink/70">Your meeting link is ready. You can join from your account 15 minutes before the consultation.</p>
+            ) : (
+              <p className="leading-7 text-ink/70">The clinic team will share meeting details after reviewing your request.</p>
+            )}
+            {bookingResult?.meetingUrl && (
+              <a className="btn-secondary justify-self-start" href={bookingResult.meetingUrl} target="_blank" rel="noreferrer">Open meeting link</a>
+            )}
+            {bookingResult?.calendarAddUrl && (
+              <a className="text-sm font-semibold text-moss" href={bookingResult.calendarAddUrl} target="_blank" rel="noreferrer">Add to calendar</a>
+            )}
+            {bookingResult?.notificationStatus !== 'sent' && (
+              <p className="rounded-md bg-semantic-warning/10 p-3 text-sm text-ink/70">We could not confirm that an email was sent. Please keep this confirmation and contact the clinic if you need help.</p>
+            )}
             {isAuthenticated && <p className="text-sm text-ink/60">You can also review this booking anytime from My account.</p>}
             <button type="button" className="btn-secondary justify-self-start" onClick={() => setSubmitted(false)}>Send another request</button>
           </div>
@@ -298,14 +325,14 @@ export function BookingForm() {
               placeholder="Share a short note. Avoid emergency details here."
             />
           </label>
-          <label className="flex gap-3 text-sm leading-6 text-ink/80">
-            <input type="checkbox" checked={bookingConsentGiven} onChange={(event) => setBookingConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-forest" />
-            <span>I consent to Antaran using these details to contact me about this booking request.</span>
-          </label>
-          {isAuthenticated && (
-            <label className="flex gap-3 text-sm leading-6 text-ink/80">
-              <input type="checkbox" checked={consentGiven} onChange={(event) => setConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-forest" />
-              <span>I consent to Antaran storing this booking request in my account so I can view its status later.</span>
+           <label className="flex gap-3 text-sm leading-6 text-ink/80">
+             <input type="checkbox" checked={bookingConsentGiven} onChange={(event) => setBookingConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-forest" />
+             <span>I consent to Antaran using these details to contact me about this booking request.</span>
+           </label>
+           {isAuthenticated && (
+             <label className="flex gap-3 text-sm leading-6 text-ink/80">
+               <input type="checkbox" required checked={consentGiven} onChange={(event) => setConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-forest" />
+               <span>I consent to Antaran storing this booking request in my account so I can view its status later.<span className="text-semantic-danger"> *</span></span>
             </label>
           )}
           {submitError && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{submitError}</p>}
@@ -373,7 +400,7 @@ function validateField(name, value, todayString, slots, selectedDate) {
       errors[name] = 'Please enter your full name.';
     } else if (trimmed.length < 2) {
       errors[name] = 'Name must be at least 2 characters.';
-    } else if (!/[\p{L}\s.'-]+/u.test(trimmed)) {
+    } else if (!/^[\p{L}\s.'-]+$/u.test(trimmed)) {
       errors[name] = 'Please use only letters, spaces, and common name characters.';
     }
   }
