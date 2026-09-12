@@ -107,7 +107,7 @@ async function getPrincipal(request) {
 }
 
 async function readProviderByEmail(email) {
-  const { resources } = await container('providers').items.query({
+  const { resources } = await (await providerStore()).items.query({
     query: 'SELECT TOP 1 * FROM c WHERE c.email = @email',
     parameters: [{ name: '@email', value: email.toLowerCase() }],
   }).fetchAll();
@@ -139,6 +139,15 @@ function getDatabase() {
 
 function container(name) {
   return getDatabase().container(name);
+}
+
+let providersContainer;
+
+async function providerStore() {
+  if (providersContainer) return providersContainer;
+  const { container: store } = await getDatabase().containers.createIfNotExists({ id: 'providers', partitionKey: '/id' });
+  providersContainer = store;
+  return providersContainer;
 }
 
 function emptyAvailability() {
@@ -685,7 +694,7 @@ app.http('providers', {
     const principal = await getPrincipal(request);
     if (!principal || !isAdmin(principal)) return json({ error: 'Admin access is required.' }, 403);
     try {
-      const providers = container('providers');
+      const providers = await providerStore();
       if (request.method === 'GET') {
         const { resources } = await providers.items.query('SELECT * FROM c ORDER BY c.createdAt DESC').fetchAll();
         return json({ providers: resources });
