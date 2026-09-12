@@ -154,6 +154,9 @@ export function BookingForm() {
           <p className="mt-5 text-lg leading-8 text-ink/70">
             Fill in your details below. Your request will be saved securely and the clinic team will contact you to confirm availability.
           </p>
+          <p className="mt-3 text-sm font-semibold text-ink/70">
+            Consultation fee: ₹500. This form sends a booking request; payment is not collected here.
+          </p>
           <div className="mt-8 space-y-4 text-sm text-ink/72">
             <ContactRow icon={Phone} label="Phone" value={doctor.phone} />
             <ContactRow icon={Mail} label="Email" value={doctor.email} />
