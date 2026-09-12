@@ -32,3 +32,13 @@ Status: implemented in branch `feat/ux-polish-admin-booking` (2026-08-27).
 - Date/time picker uses native calendar date + native time input constrained to available slots.
 - Availability editor uses day chips and a single shared From/To range.
 - Admin and clinician loading states now reuse the shared `LoadingState` component.
+
+## Additive public education pages
+
+Status: implemented on `main` (2026-09-12).
+
+- `/symptoms` provides searchable, category-filtered symptom and concern cards. It is educational only and links to the existing assessment and booking flows without changing their logic.
+- `/resources` provides expandable static guides for starting care, stress, sleep, and online-care questions.
+- `/prepare` provides a consultation preparation checklist and repeats the emergency-care boundary.
+- These pages use the existing design tokens and public navigation. They do not add API calls, persist health information, change assessment scoring, or change booking behavior.
+- All clinical education and emergency contact copy should receive clinician review before being treated as final launch content.
