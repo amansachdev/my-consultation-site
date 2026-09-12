@@ -20,7 +20,6 @@ export function BookingForm() {
   const [submitted, setSubmitted] = useState(false);
   const [bookingResult, setBookingResult] = useState(null);
   const [submitting, setSubmitting] = useState(false);
-  const [bookingConsentGiven, setBookingConsentGiven] = useState(false);
   const [consentGiven, setConsentGiven] = useState(false);
   const [availability, setAvailability] = useState({ enabled: false, slots: [] });
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
@@ -80,12 +79,8 @@ export function BookingForm() {
       return;
     }
 
-    if (!bookingConsentGiven) {
-      setSubmitError('Please confirm that Antaran may use these details to contact you about this booking request.');
-      return;
-    }
-    if (isAuthenticated && !consentGiven) {
-      setSubmitError('Please confirm that Antaran may save this booking to your signed-in account.');
+    if (!consentGiven) {
+      setSubmitError('Please confirm that Antaran may use and store these details for your booking request.');
       return;
     }
     submitBooking(data, form);
@@ -106,7 +101,7 @@ export function BookingForm() {
           preferredDate: data.date,
           preferredTime: data.time,
           message: data.message || '',
-          bookingConsentGiven,
+           bookingConsentGiven: consentGiven,
           bookingConsentVersion: 'booking-contact-v1',
            consentGiven,
            consentVersion: 'account-storage-v1',
@@ -119,7 +114,6 @@ export function BookingForm() {
       form.reset();
       setErrors({});
       setTouched({});
-      setBookingConsentGiven(false);
       setConsentGiven(false);
       setSelectedDate('');
       setSelectedTime('');
@@ -325,16 +319,10 @@ export function BookingForm() {
               placeholder="Share a short note. Avoid emergency details here."
             />
           </label>
-           <label className="flex gap-3 text-sm leading-6 text-ink/80">
-             <input type="checkbox" checked={bookingConsentGiven} onChange={(event) => setBookingConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-forest" />
-             <span>I consent to Antaran using these details to contact me about this booking request.</span>
+           <label className="flex items-start gap-3 text-sm leading-6 text-ink/80">
+             <input type="checkbox" required checked={consentGiven} onChange={(event) => setConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 shrink-0 accent-brand-forest" />
+             <span>I consent to Antaran using these details to contact me about this booking request and, if I am signed in, storing it in my account so I can view its status later.<span className="text-semantic-danger"> *</span></span>
            </label>
-           {isAuthenticated && (
-             <label className="flex gap-3 text-sm leading-6 text-ink/80">
-               <input type="checkbox" required checked={consentGiven} onChange={(event) => setConsentGiven(event.target.checked)} className="mt-1 h-4 w-4 accent-brand-forest" />
-               <span>I consent to Antaran storing this booking request in my account so I can view its status later.<span className="text-semantic-danger"> *</span></span>
-            </label>
-          )}
           {submitError && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{submitError}</p>}
           {!availabilityLoading && !availability.enabled && <p className="rounded-md bg-mist p-3 text-sm text-ink/70">Booking is temporarily unavailable. Please check back soon.</p>}
           <button className="btn-primary w-full justify-center" type="submit" disabled={submitting || availabilityLoading || !availability.enabled}>
