@@ -5,6 +5,7 @@ import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
 import { brand, doctor } from '../constants';
 import { LoadingState } from '../components/LoadingState';
+import stamp from '../../assets/stamp.jpg';
 
 const blankMedicine = () => ({ name: '', strength: '', dose: '', frequency: '', duration: '', instructions: '' });
 
@@ -33,6 +34,7 @@ const pdfStyles = StyleSheet.create({
   frequency: { width: '16%' },
   duration: { width: '13%' },
   instructions: { width: '23%', borderRight: 0 },
+  stamp: { position: 'absolute', bottom: 58, right: 48, width: 180, height: 103, objectFit: 'contain' },
   footer: { position: 'absolute', bottom: 28, left: 48, right: 48, alignItems: 'center', color: '#4a4a46', fontSize: 9 },
 });
 
@@ -76,6 +78,7 @@ function PrescriptionDocument({ patient, medicines, date }) {
             </View>
           ))}
         </View>
+        <Image src={stamp} style={pdfStyles.stamp} />
         <View style={pdfStyles.footer}>
           <Text>ANTARAN  •  Online consultations across India</Text>
           <Text>{doctor.email}  •  antaran.online</Text>

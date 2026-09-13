@@ -136,6 +136,7 @@ separate module remain open.
 | 2026-08-29 | Replaced the prominent mobile navigation row with a compact menu button and role-aware popover menu beside Book | Agent |
 | 2026-08-24 | Added dormant Razorpay Test Mode payment scaffolding with a fixed ₹5 server-side order, signature verification, and webhook endpoint; booking UI remains unchanged while `PAYMENTS_ENABLED=false` | Agent |
 | 2026-09-10 | Reconciled this tracker with the implemented repository: marked the patient portal, PHQ-9/GAD-7 assessment slice, and booking/availability slice done for their current scope; documented existing admin, clinician prescription, auth, consent, mock, and payment foundations and separated remaining follow-up work | Agent |
+| 2026-09-13 | Added the clinician-provided Dr. Medha signature/stamp image to the bottom-right of generated prescription PDFs | Agent |
 | 2026-09-10 | Added admin-managed provider onboarding: create pending psychiatrist/psychologist/therapist records, review status, verify/suspend providers, and allow verified database-backed providers to pass clinician access checks; public marketplace discovery remains deferred | Agent |
 | 2026-09-12 | Added additive public Symptoms, Resources, and Prepare pages with search/filtering, expandable guides, consultation CTAs, and emergency boundaries; no booking, assessment, auth, or API logic changed | Agent |
 | 2026-09-12 | Added SEO foundation: route-specific metadata and schema, public sitemap/robots files, private-route noindex controls, and analytics coverage for public content pages | Agent |
