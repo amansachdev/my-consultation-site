@@ -7,7 +7,7 @@ import { brand, doctor } from '../constants';
 import { LoadingState } from '../components/LoadingState';
 import stamp from '../../assets/stamp.jpg';
 
-const blankMedicine = () => ({ name: '', strength: '', dose: '', frequency: '', duration: '', instructions: '' });
+const blankMedicine = () => ({ name: '', strength: '', frequency: '', duration: '', instructions: '' });
 
 const pdfStyles = StyleSheet.create({
   page: { padding: 48, color: '#20201d', fontFamily: 'Helvetica', fontSize: 10 },
@@ -21,6 +21,9 @@ const pdfStyles = StyleSheet.create({
   contactValue: { color: '#4a4a46', textAlign: 'center' },
   title: { fontFamily: 'Times-Bold', fontSize: 18, marginTop: 26, marginBottom: 16 },
   patientBox: { border: '1pt solid #dfe3da', padding: 12, flexDirection: 'row', justifyContent: 'space-between' },
+  historyBox: { border: '1pt solid #dfe3da', padding: 12, marginTop: 14 },
+  historyLabel: { fontFamily: 'Helvetica-Bold', marginBottom: 4 },
+  historyValue: { color: '#4a4a46' },
   patientItem: { width: '31%' },
   label: { fontFamily: 'Helvetica-Bold', marginBottom: 4 },
   value: { color: '#4a4a46' },
@@ -28,17 +31,16 @@ const pdfStyles = StyleSheet.create({
   tableHeader: { flexDirection: 'row', backgroundColor: '#e8eee4', fontFamily: 'Helvetica-Bold' },
   tableRow: { flexDirection: 'row', borderTop: '1pt solid #dfe3da', minHeight: 34 },
   cell: { padding: 7, borderRight: '1pt solid #dfe3da' },
-  medicine: { width: '22%' },
-  strength: { width: '13%' },
-  dose: { width: '13%' },
-  frequency: { width: '16%' },
-  duration: { width: '13%' },
-  instructions: { width: '23%', borderRight: 0 },
+  medicine: { width: '27%' },
+  strength: { width: '16%' },
+  frequency: { width: '19%' },
+  duration: { width: '16%' },
+  instructions: { width: '22%', borderRight: 0 },
   stamp: { position: 'absolute', bottom: 58, right: 48, width: 180, height: 103, objectFit: 'contain' },
   footer: { position: 'absolute', bottom: 28, left: 48, right: 48, alignItems: 'center', color: '#4a4a46', fontSize: 9 },
 });
 
-function PrescriptionDocument({ patient, medicines, date }) {
+function PrescriptionDocument({ patient, medicines, date, history }) {
   return (
     <Document title={`Antaran prescription - ${patient.name}`} author={doctor.name}>
       <Page size="A4" style={pdfStyles.page}>
@@ -58,11 +60,11 @@ function PrescriptionDocument({ patient, medicines, date }) {
           <View style={pdfStyles.patientItem}><Text style={pdfStyles.label}>Age</Text><Text style={pdfStyles.value}>{patient.age} years</Text></View>
           <View style={pdfStyles.patientItem}><Text style={pdfStyles.label}>Date</Text><Text style={pdfStyles.value}>{date}</Text></View>
         </View>
+        {history.trim() && <View style={pdfStyles.historyBox}><Text style={pdfStyles.historyLabel}>History / notes</Text><Text style={pdfStyles.historyValue}>{history}</Text></View>}
         <View style={pdfStyles.table}>
           <View style={pdfStyles.tableHeader}>
             <Text style={[pdfStyles.cell, pdfStyles.medicine]}>Medicine</Text>
             <Text style={[pdfStyles.cell, pdfStyles.strength]}>Strength</Text>
-            <Text style={[pdfStyles.cell, pdfStyles.dose]}>Dose</Text>
             <Text style={[pdfStyles.cell, pdfStyles.frequency]}>Frequency</Text>
             <Text style={[pdfStyles.cell, pdfStyles.duration]}>Duration</Text>
             <Text style={[pdfStyles.cell, pdfStyles.instructions]}>Instructions</Text>
@@ -71,7 +73,6 @@ function PrescriptionDocument({ patient, medicines, date }) {
             <View style={pdfStyles.tableRow} key={`${medicine.name}-${index}`}>
               <Text style={[pdfStyles.cell, pdfStyles.medicine]}>{medicine.name}</Text>
               <Text style={[pdfStyles.cell, pdfStyles.strength]}>{medicine.strength}</Text>
-              <Text style={[pdfStyles.cell, pdfStyles.dose]}>{medicine.dose}</Text>
               <Text style={[pdfStyles.cell, pdfStyles.frequency]}>{medicine.frequency}</Text>
               <Text style={[pdfStyles.cell, pdfStyles.duration]}>{medicine.duration}</Text>
               <Text style={[pdfStyles.cell, pdfStyles.instructions]}>{medicine.instructions}</Text>
@@ -97,6 +98,7 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
   const [access, setAccess] = useState('checking');
   const [patient, setPatient] = useState({ name: '', age: '' });
   const [date, setDate] = useState(new Date().toISOString().slice(0, 10));
+  const [history, setHistory] = useState('');
   const [medicines, setMedicines] = useState([blankMedicine()]);
   const [error, setError] = useState('');
   const [recordState, setRecordState] = useState('idle');
@@ -119,12 +121,12 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
     setPatient((current) => ({ ...current, [field]: value }));
   };
   const filename = `antaran-prescription-${patient.name.trim().replace(/[^a-z0-9]+/gi, '-').replace(/^-|-$/g, '') || 'patient'}-${date}.pdf`;
-  const pdfDocument = useMemo(() => <PrescriptionDocument patient={patient} medicines={medicines} date={date} />, [date, medicines, patient]);
+  const pdfDocument = useMemo(() => <PrescriptionDocument patient={patient} medicines={medicines} date={date} history={history} />, [date, history, medicines, patient]);
   const isValid = patient.name.trim() && Number(patient.age) >= 18 && Number(patient.age) <= 120 && date && medicines.every((medicine) => Object.values(medicine).every((value) => value.trim()));
 
   useEffect(() => {
     setRecordState('idle');
-  }, [date, medicines, patient]);
+  }, [date, history, medicines, patient]);
 
   if (status === 'loading' || access === 'checking') {
     const loader = <LoadingState text="Checking clinician access..." />;
@@ -143,10 +145,20 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
     return embedded ? panel : <ClinicianShell>{panel}</ClinicianShell>;
   }
 
-  const validateDownload = (event) => {
+  const validateDownload = (event, instance) => {
     if (!isValid) {
       event.preventDefault();
       setError('Complete every patient and medicine field before downloading.');
+      return;
+    }
+    if (instance?.error) {
+      event.preventDefault();
+      setError('The PDF could not be generated. Please refresh the page and try again.');
+      return;
+    }
+    if (instance?.loading || !instance?.url) {
+      event.preventDefault();
+      setError('The PDF is still preparing. Please try again in a moment.');
       return;
     }
     setError('');
@@ -154,7 +166,7 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
     setRecordState('saving');
     apiRequest('/prescriptions', {
       method: 'POST',
-      body: JSON.stringify({ patient, medicines, date }),
+      body: JSON.stringify({ patient, medicines, date, history }),
     })
       .then(() => setRecordState('saved'))
       .catch(() => setRecordState('failed'));
@@ -169,6 +181,7 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
           <label className="field"><span>Age *</span><input type="number" min="18" max="120" value={patient.age} onChange={(event) => updatePatient('age', event.target.value)} /></label>
         </div>
         <label className="field"><span>Prescription date *</span><input type="date" value={date} onChange={(event) => setDate(event.target.value)} /></label>
+        <label className="field"><span>History / notes (optional)</span><textarea rows="4" maxLength="1000" value={history} onChange={(event) => setHistory(event.target.value)} placeholder="Add relevant clinical history or notes if needed." /></label>
       </section>
       <section className="booking-form">
         <div className="flex items-center justify-between gap-4"><h2 className="text-xl font-bold">Medicines</h2><button type="button" className="btn-secondary min-h-10 px-4 text-sm" onClick={() => setMedicines((current) => [...current, blankMedicine()])}><Plus size={16} /> Add medicine</button></div>
@@ -177,7 +190,7 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
             <div className="grid gap-4 rounded-md border border-line bg-mist p-4" key={`medicine-${index}`}>
               <div className="flex items-center justify-between"><p className="font-semibold">Medicine {index + 1}</p>{medicines.length > 1 && <button type="button" className="inline-flex min-h-10 min-w-10 items-center justify-center text-semantic-danger" aria-label={`Remove medicine ${index + 1}`} onClick={() => setMedicines((current) => current.filter((_, medicineIndex) => medicineIndex !== index))}><Trash2 size={17} /></button>}</div>
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {['name', 'strength', 'dose', 'frequency', 'duration', 'instructions'].map((field) => <label className="field" key={field}><span>{field[0].toUpperCase() + field.slice(1)} *</span><input value={medicine[field]} onChange={(event) => updateMedicine(index, field, event.target.value)} /></label>)}
+                {['name', 'strength', 'frequency', 'duration', 'instructions'].map((field) => <label className="field" key={field}><span>{field[0].toUpperCase() + field.slice(1)} *</span><input value={medicine[field]} onChange={(event) => updateMedicine(index, field, event.target.value)} /></label>)}
               </div>
             </div>
           ))}
@@ -186,7 +199,7 @@ export function PrescriptionWorkspace({ accessPath = '/workspace-access', access
         {recordState === 'saved' && <p className="text-sm text-semantic-success" role="status">Prescription record saved.</p>}
         {recordState === 'failed' && <p className="text-sm text-semantic-warning" role="status">PDF downloaded, but the clinical record could not be saved. Please notify the administrator.</p>}
         <PDFDownloadLink document={pdfDocument} fileName={filename} onClick={validateDownload} className="btn-primary justify-center sm:justify-self-start">
-          {({ loading }) => <><FileDown size={17} /> {loading ? 'Preparing PDF...' : 'Download prescription PDF'}</>}
+          {({ loading, error }) => <><FileDown size={17} /> {loading ? 'Preparing PDF...' : error ? 'PDF unavailable' : 'Download prescription PDF'}</>}
         </PDFDownloadLink>
       </section>
     </div>
