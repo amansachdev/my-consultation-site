@@ -271,7 +271,7 @@ export const handlers = [
     const body = await request.json();
     const patient = body.patient || {};
     const medicines = Array.isArray(body.medicines) ? body.medicines : [];
-    if (!patient.name || !Number.isInteger(Number(patient.age)) || Number(patient.age) < 18 || !body.date || !medicines.length || medicines.some((medicine) => Object.values(medicine).some((value) => !String(value || '').trim()))) {
+    if (!patient.name || !Number.isInteger(Number(patient.age)) || Number(patient.age) < 18 || !body.date || !medicines.length || medicines.some((medicine) => ['name', 'strength', 'frequency', 'duration', 'instructions'].some((field) => !String(medicine[field] || '').trim()))) {
       return HttpResponse.json({ error: 'Patient details and complete medicine fields are required.' }, { status: 400 });
     }
     return HttpResponse.json({ prescription: { id: crypto.randomUUID(), createdAt: new Date().toISOString() } }, { status: 201 });

@@ -388,8 +388,8 @@ async function canAccessClinicianTools(principal) {
   return isClinician(principal) || isAdmin(principal) || Boolean(await readVerifiedProvider(principal));
 }
 
-const PRESCRIPTION_MEDICINE_FIELDS = ['name', 'strength', 'dose', 'frequency', 'duration', 'instructions'];
-const PRESCRIPTION_MEDICINE_LIMITS = { name: 120, strength: 60, dose: 60, frequency: 80, duration: 60, instructions: 240 };
+const PRESCRIPTION_MEDICINE_FIELDS = ['name', 'strength', 'frequency', 'duration', 'instructions'];
+const PRESCRIPTION_MEDICINE_LIMITS = { name: 120, strength: 60, frequency: 80, duration: 60, instructions: 240 };
 let prescriptionsContainer;
 
 async function prescriptionStore() {
@@ -404,13 +404,14 @@ function cleanPrescription(body) {
   const patientName = cleanText(source.patient?.name, 120);
   const age = Number(source.patient?.age);
   const prescribedFor = cleanText(source.date, 10);
+  const history = cleanText(source.history, 1000);
   const medicines = Array.isArray(source.medicines) ? source.medicines.slice(0, 20) : [];
   const cleanedMedicines = medicines.map((medicine) => Object.fromEntries(
     PRESCRIPTION_MEDICINE_FIELDS.map((field) => [field, cleanText(medicine?.[field], PRESCRIPTION_MEDICINE_LIMITS[field])]),
   ));
   const complete = cleanedMedicines.every((medicine) => PRESCRIPTION_MEDICINE_FIELDS.every((field) => medicine[field]));
   if (!patientName || !Number.isInteger(age) || age < 18 || age > 120 || !/^\d{4}-\d{2}-\d{2}$/.test(prescribedFor) || cleanedMedicines.length === 0 || !complete) return null;
-  return { patientName, patientAge: age, prescribedFor, medicines: cleanedMedicines };
+  return { patientName, patientAge: age, prescribedFor, history, medicines: cleanedMedicines };
 }
 
 function bookingResponsePayload(record) {
