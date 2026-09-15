@@ -6,6 +6,23 @@ import { useAuth } from '../context/useAuth';
 import { apiRequest } from '../lib/api';
 
 const CONSULTATION_TYPE = consultationTypes[0]?.title || 'Psychiatric Consultation';
+const CONSULTATION_AMOUNT_INR = 500;
+
+let razorpayScriptPromise;
+
+function loadRazorpayScript() {
+  if (window.Razorpay) return Promise.resolve();
+  if (razorpayScriptPromise) return razorpayScriptPromise;
+  razorpayScriptPromise = new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = resolve;
+    script.onerror = () => reject(new Error('Payment checkout could not be loaded. Please try again.'));
+    document.body.appendChild(script);
+  });
+  return razorpayScriptPromise;
+}
 
 function createIdempotencyKey() {
   return globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(36).slice(2)}`;
@@ -25,6 +42,7 @@ export function BookingForm() {
   const [availabilityLoading, setAvailabilityLoading] = useState(true);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+  const [paymentEnabled, setPaymentEnabled] = useState(false);
   const idempotencyKey = useRef(createIdempotencyKey());
 
   const todayString = useMemo(() => {
@@ -52,6 +70,14 @@ export function BookingForm() {
       .then((response) => { if (!cancelled) setAvailability(response); })
       .catch(() => { if (!cancelled) setAvailability({ enabled: false, slots: [] }); })
       .finally(() => { if (!cancelled) setAvailabilityLoading(false); });
+    return () => { cancelled = true; };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiRequest('/payments/config')
+      .then((response) => { if (!cancelled) setPaymentEnabled(response.enabled === true); })
+      .catch(() => { if (!cancelled) setPaymentEnabled(false); });
     return () => { cancelled = true; };
   }, []);
 
@@ -83,10 +109,79 @@ export function BookingForm() {
       setSubmitError('Please confirm that Antaran may use and store these details for your booking request.');
       return;
     }
-    submitBooking(data, form);
+    beginPayment(data, form);
   };
 
-  const submitBooking = async (data, form) => {
+  const beginPayment = async (data, form) => {
+    setSubmitting(true);
+    setSubmitError('');
+    try {
+      const config = await apiRequest('/payments/config');
+      if (!config.enabled) {
+        await submitBooking(data, form);
+        return;
+      }
+
+      const order = await apiRequest('/payments/order', { method: 'POST', body: JSON.stringify({}) });
+      await loadRazorpayScript();
+      let checkoutSettled = false;
+      const razorpay = new window.Razorpay({
+        key: order.keyId,
+        amount: order.amount,
+        currency: order.currency,
+        name: 'Antaran',
+        description: 'Psychiatric consultation',
+        order_id: order.orderId,
+        prefill: {
+          name: data.name,
+          email: data.email,
+          contact: data.phone,
+        },
+        notes: { consultationType: CONSULTATION_TYPE },
+        theme: { color: '#1f5c4d' },
+        handler: async (paymentResponse) => {
+          checkoutSettled = true;
+          try {
+            await apiRequest('/payments/verify', {
+              method: 'POST',
+              body: JSON.stringify({
+                orderId: paymentResponse.razorpay_order_id,
+                paymentId: paymentResponse.razorpay_payment_id,
+                signature: paymentResponse.razorpay_signature,
+              }),
+            });
+            await submitBooking(data, form, {
+              orderId: paymentResponse.razorpay_order_id,
+              paymentId: paymentResponse.razorpay_payment_id,
+              signature: paymentResponse.razorpay_signature,
+            });
+          } catch (error) {
+            setSubmitError(error.message);
+            setSubmitting(false);
+          }
+        },
+        modal: {
+          ondismiss: () => {
+            if (!checkoutSettled) {
+              setSubmitError('Payment was cancelled. Your booking was not submitted.');
+              setSubmitting(false);
+            }
+          },
+        },
+      });
+      razorpay.on('payment.failed', (response) => {
+        checkoutSettled = true;
+        setSubmitError(response.error?.description || 'Payment failed. Your booking was not submitted.');
+        setSubmitting(false);
+      });
+      razorpay.open();
+    } catch (error) {
+      setSubmitError(error.message);
+      setSubmitting(false);
+    }
+  };
+
+  const submitBooking = async (data, form, payment) => {
     setSubmitting(true);
     setSubmitError('');
     try {
@@ -106,6 +201,7 @@ export function BookingForm() {
            consentGiven,
            consentVersion: 'account-storage-v1',
            idempotencyKey: idempotencyKey.current,
+           ...(payment ? { payment } : {}),
          }),
        });
       setBookingResult(response.booking || null);
@@ -155,7 +251,7 @@ export function BookingForm() {
             Fill in your details below. Your request will be saved securely and the clinic team will contact you to confirm availability.
           </p>
           <p className="mt-3 text-sm font-semibold text-ink/70">
-            Consultation fee: ₹500. This form sends a booking request; payment is not collected here.
+            Consultation fee: ₹500 (GST included). Payment is required before booking confirmation.
           </p>
           <div className="mt-8 space-y-4 text-sm text-ink/72">
             <ContactRow icon={Phone} label="Phone" value={doctor.phone} />
@@ -329,7 +425,7 @@ export function BookingForm() {
           {submitError && <p className="rounded-md bg-semantic-danger/10 p-3 text-sm font-medium text-semantic-danger" role="alert">{submitError}</p>}
           {!availabilityLoading && !availability.enabled && <p className="rounded-md bg-mist p-3 text-sm text-ink/70">Booking is temporarily unavailable. Please check back soon.</p>}
           <button className="btn-primary w-full justify-center" type="submit" disabled={submitting || availabilityLoading || !availability.enabled}>
-            {submitting ? 'Sending...' : 'Send booking request'}
+            {submitting ? (paymentEnabled ? 'Opening payment...' : 'Sending...') : (paymentEnabled ? `Pay ₹${CONSULTATION_AMOUNT_INR} and request booking` : 'Send booking request')}
             <ArrowRight size={18} />
           </button>
         </form>}

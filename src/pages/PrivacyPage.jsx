@@ -8,7 +8,7 @@ export function PrivacyPage() {
       <h2>Why we use it</h2>
       <p>We use information to respond to booking requests, manage appointment availability, provide account features, support clinical record-keeping, create requested calendar and meeting links, send transactional messages, protect the service, and improve reliability. Assessment scores are screening information and are not a diagnosis.</p>
       <h2>Service providers</h2>
-      <p>The current implementation may use Firebase Authentication, Azure Functions and Cosmos DB, Resend, Google Calendar and Google Meet, and analytics services including Google Analytics and Microsoft Clarity. Payment services are present in the codebase but disabled until provider onboarding and approval are complete.</p>
+      <p>The current implementation may use Firebase Authentication, Azure Functions and Cosmos DB, Resend, Google Calendar and Google Meet, and analytics services including Google Analytics and Microsoft Clarity. Payment services are enabled only after provider onboarding and environment configuration are complete.</p>
       <h2>Storage and retention</h2>
       <p>Records are stored only for as long as needed for the stated purpose and applicable legal, clinical, accounting, and dispute-resolution requirements. Final retention periods, deletion rules, and data-region details are pending legal and operational approval.</p>
       <h2>Your choices and rights</h2>
