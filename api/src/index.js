@@ -16,7 +16,7 @@ const PAYMENTS_ENABLED = process.env.PAYMENTS_ENABLED === 'true';
 const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || '';
 const RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || '';
 const RAZORPAY_WEBHOOK_SECRET = process.env.RAZORPAY_WEBHOOK_SECRET || '';
-const RAZORPAY_TEST_AMOUNT_PAISE = 500;
+const CONSULTATION_AMOUNT_PAISE = 50000;
 const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || 'sachdevaman7@gmail.com,10medha@gmail.com,antaran.health@gmail.com')
   .split(',')
   .map((email) => email.trim().toLowerCase())
@@ -449,6 +449,15 @@ function validateBooking(body) {
   return error ? null : booking;
 }
 
+function cleanPayment(body) {
+  const payment = body?.payment;
+  if (!payment || typeof payment !== 'object') return null;
+  const orderId = cleanText(payment.orderId, 80);
+  const paymentId = cleanText(payment.paymentId, 80);
+  const signature = cleanText(payment.signature, 160);
+  return orderId && paymentId && signature ? { orderId, paymentId, signature } : null;
+}
+
 function scoreAssessment(type, responses) {
   const expected = type === 'PHQ-9' ? 9 : type === 'GAD-7' ? 7 : 0;
   if (!expected || !Array.isArray(responses) || responses.length !== expected || responses.some((value) => !Number.isInteger(value) || value < 0 || value > 3)) return null;
@@ -762,7 +771,7 @@ app.http('paymentConfig', {
   methods: ['GET'],
   authLevel: 'anonymous',
   route: 'payments/config',
-  handler: async () => json({ enabled: PAYMENTS_ENABLED, currency: 'INR', amount: RAZORPAY_TEST_AMOUNT_PAISE }),
+  handler: async () => json({ enabled: PAYMENTS_ENABLED, currency: 'INR', amount: CONSULTATION_AMOUNT_PAISE }),
 });
 
 app.http('paymentOrder', {
@@ -775,10 +784,10 @@ app.http('paymentOrder', {
     if (limited) return limited;
     try {
       const order = await razorpayRequest('/orders', {
-        amount: RAZORPAY_TEST_AMOUNT_PAISE,
+        amount: CONSULTATION_AMOUNT_PAISE,
         currency: 'INR',
         receipt: `antaran-${crypto.randomUUID().replaceAll('-', '').slice(0, 24)}`,
-        notes: { environment: 'test', product: 'consultation' },
+        notes: { product: 'psychiatric-consultation', amountInr: '500' },
       });
       return json({ keyId: RAZORPAY_KEY_ID, orderId: order.id, amount: order.amount, currency: order.currency });
     } catch (error) {
@@ -800,7 +809,7 @@ app.http('paymentVerify', {
     const paymentId = cleanText(body.paymentId, 80);
     const signature = cleanText(body.signature, 160);
     if (!orderId || !paymentId || !verifySignature(`${orderId}|${paymentId}`, signature, RAZORPAY_KEY_SECRET)) return json({ verified: false, error: 'Payment verification failed.' }, 400);
-    return json({ verified: true, orderId, paymentId });
+    return json({ verified: true, orderId, paymentId, amount: CONSULTATION_AMOUNT_PAISE, currency: 'INR' });
   },
 });
 
@@ -838,6 +847,8 @@ app.http('bookings', {
       const body = await request.json();
       if (body.bookingConsentGiven !== true || body.bookingConsentVersion !== BOOKING_CONSENT_VERSION) return json({ error: 'Booking contact consent is required.' }, 400);
       if (principal && (body.consentGiven !== true || body.consentVersion !== ACCOUNT_CONSENT_VERSION)) return json({ error: 'To save this booking to your signed-in account, please confirm account storage consent and submit again.' }, 400);
+      const payment = cleanPayment(body);
+      if (PAYMENTS_ENABLED && (!payment || !verifySignature(`${payment.orderId}|${payment.paymentId}`, payment.signature, RAZORPAY_KEY_SECRET))) return json({ error: 'A successful payment is required before confirming your booking.' }, 400);
       const booking = validateBooking(body);
       if (!booking) return json({ error: 'Please complete the required booking fields.' }, 400);
       const slotKey = `${booking.preferredDate}|${booking.preferredTime}`;
@@ -858,7 +869,7 @@ app.http('bookings', {
       }
       const { availability, slots } = await getAvailableSlots(context);
       if (!availability.enabled || !slots.some((slot) => slot.slotKey === slotKey)) return json({ error: 'That time is not currently available. Please choose another slot.' }, 409);
-      const record = { id: crypto.randomUUID(), userId, isGuest: !principal, slotKey, ...booking, status: 'requested', meetingStatus: 'pending', notificationStatus: 'pending', bookingConsentVersion: BOOKING_CONSENT_VERSION, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
+      const record = { id: crypto.randomUUID(), userId, isGuest: !principal, slotKey, ...booking, ...(payment ? { payment: { orderId: payment.orderId, paymentId: payment.paymentId, amount: CONSULTATION_AMOUNT_PAISE, currency: 'INR', status: 'verified' } } : {}), status: 'requested', meetingStatus: 'pending', notificationStatus: 'pending', bookingConsentVersion: BOOKING_CONSENT_VERSION, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       try {
         await container('slotReservations').items.create({ id: slotKey, slotKey, bookingId: record.id, userId, idempotencyKey, createdAt: record.createdAt });
         if (principal) await recordConsent(principal.userId, ACCOUNT_CONSENT_VERSION);

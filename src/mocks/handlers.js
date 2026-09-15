@@ -307,5 +307,5 @@ export const handlers = [
     return HttpResponse.json({ assessment: record }, { status: 201 });
   }),
 
-  http.get('/api/payments/config', () => HttpResponse.json({ enabled: false, currency: 'INR', amount: 500 })),
+  http.get('/api/payments/config', () => HttpResponse.json({ enabled: false, currency: 'INR', amount: 50000 })),
 ];
