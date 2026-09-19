@@ -9,9 +9,7 @@ const dirname = typeof __dirname !== 'undefined' ? __dirname : path.dirname(file
 
 // More info at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon
 export default defineConfig({
-  // Default base is '/' for Azure / custom domain deployments.
-  // GitHub Pages workflow overrides this with VITE_BASE_URL for the /my-consultation-site/ path.
-  base: process.env.VITE_BASE_URL || '/',
+  base: '/',
   plugins: [react()],
   server: {
     proxy: {

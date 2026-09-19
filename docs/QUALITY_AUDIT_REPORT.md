@@ -16,8 +16,9 @@ This document is the durable record of the audit. Each finding lists its **decis
 | Decision | Count | Findings |
 |----------|-------|----------|
 | **Fixed in this PR** | 17 | C1, C2 (rate limiting only), C4, H1, H2, H4, H5, H6, H8, M2, M3, M4, M5, M6, M7, L2, L3 |
-| **Deferred — agreed** | 7 | C3, H3, H7, M1, M8, L4, L5 |
-| **Pending owner decision** | 2 | L1, C2 (CAPTCHA / WAF layer) |
+| **Fixed in follow-up** | 2 | L1 (Pages removed, Azure canonical), M1 (116 unit tests, `npm test` CI gate) |
+| **Deferred — agreed** | 6 | C3, H3, H7, M8, L4, L5 |
+| **Pending owner decision** | 1 | C2 (CAPTCHA / WAF layer) |
 
 ---
 
@@ -175,11 +176,15 @@ Full guest booking lookup (booking reference + email link) remains part of H7.
 ## 🟡 Medium
 
 ### M1 — Zero automated tests
-**Status: DEFERRED (agreed)**
+**Status: FIXED**
 
-No test files exist; Vitest is wired only to Storybook; there is no `npm test` script. Clinical scoring and payment signature verification are exactly the code that most needs unit tests. Note the scoring logic is duplicated in `src/utils/assessmentScoring.js` and `api/src/index.js` — two implementations that will drift.
+116 unit tests added across three test files, with a `npm test` script and CI gate (`ci.yml`). Covers:
 
-**Recommendation when picked up:** unit tests for scoring (both copies), `verifySignature`, `validateBooking`, and slot generation; then a PR CI gate (partially added now, see L2).
+- **Client-side scoring** (`src/utils/assessmentScoring.test.js`): PHQ-9/GAD-7 severity boundaries, suicidal ideation flag, `isComplete`, edge cases.
+- **Server-side scoring** (`api/src/scoring.test.js`): Same boundary tests, strict input validation (non-array, wrong length, out-of-range, non-integer → `null`), cross-checks with client scoring to prevent drift.
+- **Validation and signature** (`api/src/validation.test.js`): `verifySignature` (valid/invalid HMAC, timing-safe length check), `validateBooking` (age limits, required fields, truncation, sanitization), `cleanText`, `cleanPayment`.
+
+Scoring and validation functions were extracted into `api/src/scoring.js` and `api/src/validation.js` (no behavior change, same imports in `api/src/index.js`). `vitest.config.unit.js` provides a separate Node-based test config alongside the existing Storybook browser test config.
 
 ### M2 — Internal "verify before launch" note was shown to patients in crisis
 **Status: FIXED**
@@ -237,11 +242,9 @@ No right-to-erasure or data-portability flow in the account portal. DPDP Act gap
 ## 🔵 Low / hygiene
 
 ### L1 — Package name and two live deploy targets
-**Status: PENDING OWNER DECISION**
+**Status: FIXED**
 
-`package.json` was still named `dr-medha-consultation-site` (renamed to `antaran-platform` in this PR). The bigger question is unchanged: **both** GitHub Pages (`pages.yml`, auto-deploys on every push to `main`) and Azure Static Web Apps (`azure-static-web-apps.yml`, manual dispatch) are live. The GitHub Pages deployment has **no API**, so booking, accounts, and assessments silently fail there while the site looks healthy.
-
-**Needs a decision:** which host is canonical? If Azure + `antaran.online` is production, the Pages workflow should be removed or pointed at a preview environment. Not changed unilaterally — it affects deployment strategy.
+`package.json` was still named `dr-medha-consultation-site` (renamed to `antaran-platform` in the original PR). The owner confirmed Azure (`antaran.online`) as the canonical production host. The GitHub Pages workflow (`pages.yml`), the `homepage` field, `predeploy`/`deploy` scripts, and the `gh-pages` dependency have been removed. The `VITE_BASE_URL` override in `vite.config.js` was simplified to a fixed `base: '/'`.
 
 ### L2 — No CI checks on pull requests
 **Status: FIXED**
