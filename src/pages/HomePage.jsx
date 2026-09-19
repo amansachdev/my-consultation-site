@@ -12,7 +12,7 @@ import {
   Video,
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import heroImage from '../../assets/consultation-hero.png';
+import heroImage from '../../assets/consultation-hero.jpg';
 import { FaqSection } from '../components/FaqSection';
 import { brand, careAreas, consultationTypes, doctor, steps } from '../constants';
 
