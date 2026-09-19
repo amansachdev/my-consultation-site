@@ -2,7 +2,8 @@ import { app } from '@azure/functions';
 import { CosmosClient } from '@azure/cosmos';
 import { cert, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
-import { createHmac, timingSafeEqual } from 'node:crypto';
+import { scoreAssessment } from './scoring.js';
+import { verifySignature, validateBooking, cleanText, cleanPayment } from './validation.js';
 
 const DATABASE_NAME = process.env.COSMOS_DB_DATABASE || 'antaran';
 const RESEND_API_KEY = process.env.RESEND_API_KEY || '';
@@ -316,20 +317,8 @@ function handleServerError(context, error) {
   return json({ error: 'We could not complete that request. Please try again.' }, 500);
 }
 
-function cleanText(value, maxLength) {
-  return String(value || '').trim().slice(0, maxLength);
-}
-
 function paymentError() {
   return new Error('Payments are not configured for this environment.');
-}
-
-function verifySignature(payload, signature, secret) {
-  if (!signature || !secret) return false;
-  const expected = createHmac('sha256', secret).update(payload).digest('hex');
-  const expectedBuffer = Buffer.from(expected);
-  const signatureBuffer = Buffer.from(signature);
-  return expectedBuffer.length === signatureBuffer.length && timingSafeEqual(expectedBuffer, signatureBuffer);
 }
 
 async function razorpayRequest(path, body) {
@@ -432,54 +421,6 @@ async function readBookingById(bookingId) {
     parameters: [{ name: '@id', value: bookingId }],
   }).fetchAll();
   return resources[0] || null;
-}
-
-function validateBooking(body) {
-  const booking = {
-    fullName: cleanText(body.fullName, 120),
-    age: Number(body.age),
-    phone: cleanText(body.phone, 30),
-    email: cleanText(body.email, 160),
-    consultationType: cleanText(body.consultationType, 80),
-    preferredDate: cleanText(body.preferredDate, 20),
-    preferredTime: cleanText(body.preferredTime, 20),
-    message: cleanText(body.message, 1000),
-  };
-  const error = !booking.fullName || !Number.isInteger(booking.age) || booking.age < 18 || booking.age > 120 || !booking.phone || !booking.email || !booking.consultationType || !booking.preferredDate || !booking.preferredTime;
-  return error ? null : booking;
-}
-
-function cleanPayment(body) {
-  const payment = body?.payment;
-  if (!payment || typeof payment !== 'object') return null;
-  const orderId = cleanText(payment.orderId, 80);
-  const paymentId = cleanText(payment.paymentId, 80);
-  const signature = cleanText(payment.signature, 160);
-  return orderId && paymentId && signature ? { orderId, paymentId, signature } : null;
-}
-
-function scoreAssessment(type, responses) {
-  const expected = type === 'PHQ-9' ? 9 : type === 'GAD-7' ? 7 : 0;
-  if (!expected || !Array.isArray(responses) || responses.length !== expected || responses.some((value) => !Number.isInteger(value) || value < 0 || value > 3)) return null;
-
-  const score = responses.reduce((sum, value) => sum + value, 0);
-  let severity = type === 'PHQ-9' ? 'Minimal depression' : 'Minimal anxiety';
-  if (type === 'PHQ-9') {
-    if (score >= 5) severity = 'Mild depression';
-    if (score >= 10) severity = 'Moderate depression';
-    if (score >= 15) severity = 'Moderately severe depression';
-    if (score >= 20) severity = 'Severe depression';
-  } else {
-    if (score >= 5) severity = 'Mild anxiety';
-    if (score >= 10) severity = 'Moderate anxiety';
-    if (score >= 15) severity = 'Severe anxiety';
-  }
-
-  return {
-    score,
-    severity,
-    isHighRisk: type === 'PHQ-9' ? responses[8] > 0 : score >= 15,
-  };
 }
 
 async function notifyBooking(booking) {
