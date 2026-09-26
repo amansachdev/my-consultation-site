@@ -207,7 +207,7 @@ The main JS chunk was 1.7 MB (595 KB gzip) because `@react-pdf/renderer`, import
 
 **Fix:** `/admin` and `/clinician/prescriptions` are now lazy-loaded route chunks (with a Suspense fallback), and the prescription workspace embedded in the admin page is lazy-loaded too. Result: react-pdf and the workspace code are no longer in the entry chunk — see the before/after table in the PR description.
 
-**Still open (deferred, low risk):** image optimisation. `consultation-hero.png` is 1.57 MB and `dr medha profile.png` is 595 KB. Converting to WebP/AVIF with responsive sizes would materially improve LCP. Not done here to keep the diff reviewable; recommend as a follow-up (tracker M0/M13 performance work).
+**Follow-up (FIXED):** image optimisation. `consultation-hero.png` (1.57 MB) and `dr medha profile.png` (595 KB) were converted to optimized JPEG format (`consultation-hero.jpg`, 230KB and `dr-medha-profile.jpg`, 106KB), materially improving LCP.
 
 ### M5 — Unanchored name validation regex
 **Status: FIXED**
@@ -288,6 +288,6 @@ Shared components take props with no runtime or static type checking. A typed AP
 4. **M1** — unit tests for scoring, signature verification, booking validation; add `npm test` and gate CI on it.
 5. **M8** — account deletion / data export (DPDP rights).
 6. **L1** — pick the canonical host and retire the other deploy path.
-7. **M4 follow-up** — image optimisation (hero 1.57 MB → WebP/AVIF).
+
 8. **M7** — legal review of the privacy policy and terms drafts.
 9. **C4 follow-up** — move the Firebase key into a vault and rotate it.

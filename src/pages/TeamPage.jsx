@@ -1,4 +1,4 @@
-import teamImage from '../../assets/dr medha profile.png';
+import teamImage from '../../assets/dr-medha-profile.jpg';
 import { doctor } from '../constants';
 
 export function TeamPage() {
